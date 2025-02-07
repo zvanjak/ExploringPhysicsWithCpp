@@ -66,6 +66,14 @@ namespace MML
 		{ }
 	};
 
+	//////////           Interpolation exceptions            ///////////
+	class RealFuncInterpInitError: public std::domain_error
+	{
+	public:
+		RealFuncInterpInitError(std::string inMessage) : std::domain_error(inMessage)
+		{ }
+	};
+
 	////////////             Tensor exceptions             /////////////
 	class TensorCovarContravarNumError : public std::invalid_argument
 	{
@@ -91,6 +99,22 @@ namespace MML
 		TensorIndexError(std::string inMessage) : std::invalid_argument(inMessage)
 		{ }
 	};    
+
+	//////////           Root finding exceptions            ///////////
+	class RootFindingError: public std::runtime_error
+	{
+	public:
+		RootFindingError(std::string inMessage) : std::runtime_error(inMessage)
+		{ }
+	};
+
+	//////////            ODE solver exceptions             ///////////
+	class ODESolverError: public std::runtime_error
+	{
+	public:
+		ODESolverError(std::string inMessage) : std::runtime_error(inMessage)
+		{ }
+	};
 }
 
 #endif // MML_EXCEPTIONS_H

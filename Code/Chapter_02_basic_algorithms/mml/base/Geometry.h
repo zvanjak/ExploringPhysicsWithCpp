@@ -51,6 +51,9 @@ namespace MML
 			_phi = atan2(pnt.Y(), pnt.X());
 		}
 
+		bool	operator==(const Point2Polar& b) const { return (R() == b.R()) && (Phi() == b.Phi()); }
+		bool	operator!=(const Point2Polar& b) const { return (R() != b.R()) || (Phi() != b.Phi()); }
+
 		Point2Cartesian TransfToCart() const {  return Point2Cartesian(R() * cos(Phi()), R() * sin(Phi())); }
 
 		Real Dist(const Point2Polar& b) const { return sqrt(R() * R() + b.R() * b.R() - 2 * R() * b.R() * cos(b.Phi() - Phi())); }
@@ -108,10 +111,15 @@ namespace MML
 			_theta = atan2(sqrt(POW2(pnt.X()) + POW2(pnt.Y())), pnt.Z());
 			_phi = atan2(pnt.Y(), pnt.X());
 		}
+		
+		bool	operator==(const Point3Spherical& b) const { return (R() == b.R()) && (Theta() == b.Theta()) && (Phi() == b.Phi()); }
+		bool	operator!=(const Point3Spherical& b) const { return (R() != b.R()) || (Theta() != b.Theta()) || (Phi() != b.Phi()); }
+
 		Point3Cartesian TransfToCart() const
 		{
 			return Point3Cartesian(R() * sin(Theta()) * cos(Phi()), R() * sin(Theta()) * sin(Phi()), R() * cos(Theta()));
 		}
+		
 		Real Dist(const Point3Spherical& b) const
 		{
 			return sqrt(R() * R() + b.R() * b.R() - 2 * R() * b.R() * cos(b.Theta() - Theta()) * cos(b.Phi() - Phi()));
@@ -139,10 +147,15 @@ namespace MML
 			_phi = atan2(pnt.Y(), pnt.X());
 			_z = pnt.Z();
 		}
+		
+		bool	operator==(const Point3Cylindrical& b) const { return (R() == b.R()) && (Phi() == b.Phi()) && (Z() == b.Z()); }
+		bool	operator!=(const Point3Cylindrical& b) const { return (R() != b.R()) || (Phi() != b.Phi()) || (Z() != b.Z()); }
+
 		Point3Cartesian TransfToCart() const
 		{
 			return Point3Cartesian(R() * cos(Phi()), R() * sin(Phi()), Z());
 		}
+		
 		Real Dist(const Point3Cylindrical& b) const
 		{
 			return sqrt(R() * R() + b.R() * b.R() - 2 * R() * b.R() * cos(b.Phi() - Phi()) + POW2(b.Z() - Z()));
@@ -170,6 +183,7 @@ namespace MML
 			Real s = (_a + _b + _c) / 2.0;
 			return sqrt(s * (s - _a) * (s - _b) * (s - _c));
 		}
+		
 		bool IsRight() const
 		{
 			return ( POW2(_a) + POW2(_b) == POW2(_c)) || 

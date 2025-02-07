@@ -314,7 +314,10 @@ namespace MML
 			return a * b + b * a;
 		}
 
-		template<class Type> static void MatrixDecomposeToSymAntisym(const Matrix<Type>& orig, Matrix<Type>& outSym, Matrix<Type>& outAntiSym)
+		template<class Type> 
+		static void MatrixDecomposeToSymAntisym(const Matrix<Type>& orig, 
+																						Matrix<Type>& outSym, 
+																						Matrix<Type>& outAntiSym)
 		{
 			if (orig.RowNum() != orig.ColNum())
 				throw MatrixDimensionError("MatrixDecompose - matrix must be square", orig.RowNum(), orig.ColNum(), -1, -1);

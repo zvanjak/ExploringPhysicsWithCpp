@@ -58,10 +58,23 @@ namespace MML
 
 		////////////////            std::vector forwarding                 ////////////////////
 		int  size()  const { return (int)_elems.size(); }
-		bool empty() const { return _elems.empty(); }
+		bool isEmpty() const { return _elems.empty(); }
 
-		void clear()						{ _elems.clear(); }
-		void resize(int newLen)	{ _elems.resize(newLen); }
+		void Clear()						{ _elems.clear(); }
+		void Resize(int newLen, bool preserveElements = false)	
+		{ 
+			if (preserveElements == true)
+			{
+				std::vector<Type> oldElems(_elems);
+
+				_elems.resize(newLen); 
+
+				for (int i = 0; i < oldElems.size() && i < newLen; i++)
+					_elems[i] = oldElems[i];
+			}
+			else
+				_elems.resize(newLen); 
+		}
 
 		/////////////////////            Accessing elements             ///////////////////////
 		inline Type&       operator[](int n)       { return _elems[n]; }

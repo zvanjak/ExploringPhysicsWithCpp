@@ -5,7 +5,6 @@
 
 #include "base/Vector.h"
 #include "base/VectorN.h"
-//#include "base/Tensor.h"
 
 namespace MML
 {
@@ -25,21 +24,20 @@ namespace MML
 	public:
 		virtual Real operator()(Real) const = 0;
 		
-		virtual ~IRealFunction() {}
-
 		void GetValues(Real x1, Real x2, int numPnt, Vector<Real>& outX, Vector<Real>& outY)
 		{
-			outX.resize(numPnt);
-			outY.resize(numPnt);
+			outX.Resize(numPnt);
+			outY.Resize(numPnt);
 
 			for (int i = 0; i < numPnt; i++) {
 				outX[i] = x1 + i * (x2 - x1) / (numPnt - 1);
 				outY[i] = (*this)(outX[i]);
 			}
 		}
+
+		virtual ~IRealFunction() {}
 	};
 
-	// RFExt - zna derivaciju
 	class IRealFunctionParametrized : public IRealFunction
 	{
 	public:
@@ -192,60 +190,5 @@ namespace MML
 
 		virtual ~IParametricSurfaceRect() {}
 	};
-
-	//////////////////////////////////////////////////////////////////////
-	// template<int N>
-	// class ITensorField2 : public IFunction<Tensor2<N>, const VectorN<Real, N>& >
-	// {
-	// 	int _numContravar;
-	// 	int _numCovar;
-	// public:
-	// 	ITensorField2(int numContra, int numCo) : _numContravar(numContra), _numCovar(numCo) { }
-
-	// 	int getNumContravar() const { return _numContravar; }
-	// 	int getNumCovar() const { return _numCovar; }
-
-	// 	virtual Real    Component(int i, int j, const VectorN<Real, N>& pos) const = 0;
-	// 	virtual ~ITensorField2() {}
-	// };
-
-	// template<int N>
-	// class ITensorField3 : public IFunction<Tensor3<N>, const VectorN<Real, N>& >
-	// {
-	// 	int _numContravar;
-	// 	int _numCovar;
-	// public:
-	// 	int getNumContravar() const { return _numContravar; }
-	// 	int getNumCovar() const { return _numCovar; }
-
-	// 	virtual Real    Component(int i, int j, int k, const VectorN<Real, N>& pos) const = 0;
-	// 	virtual ~ITensorField3() {}
-	// };
-
-	// template<int N>
-	// class ITensorField4 : public IFunction<Tensor4<N>, const VectorN<Real, N>& >
-	// {
-	// 	int _numContravar;
-	// 	int _numCovar;
-	// public:
-	// 	int getNumContravar() const { return _numContravar; }
-	// 	int getNumCovar() const { return _numCovar; }
-
-	// 	virtual Real    Component(int i, int j, int k, int l, const VectorN<Real, N>& pos) const = 0;
-	// 	virtual ~ITensorField4() {}
-	// };
-
-	// template<int N>
-	// class ITensorField5 : public IFunction<Tensor5<N>, const VectorN<Real, N>& >
-	// {
-	// 	int _numContravar;
-	// 	int _numCovar;
-	// public:
-	// 	int getNumContravar() const { return _numContravar; }
-	// 	int getNumCovar() const { return _numCovar; }
-
-	// 	virtual Real    Component(int i, int j, int k, int l, int m, const VectorN<Real, N>& pos) const = 0;
-	// 	virtual ~ITensorField5() {}
-	// };
 }
 #endif

@@ -66,7 +66,8 @@ namespace MML
 	{
 		std::function<VectorN<Real, N>(const VectorN<Real, N>&)> _func;
 	public:
-		VectorFunctionFromStdFunc(std::function<VectorN<Real, N>(const VectorN<Real, N>&)>& inFunc) : _func(inFunc) {}
+		VectorFunctionFromStdFunc(std::function<VectorN<Real, N>(const VectorN<Real, N>&)>& inFunc) 
+			: _func(inFunc) {}
 
 		VectorN<Real, N>     operator()(const VectorN<Real, N>& x) const { return _func(x); }
 	};
@@ -100,8 +101,10 @@ namespace MML
 		Real _maxT;
 		VectorN<Real, N>(*_func)(Real);
 	public:
-		ParametricCurve(VectorN<Real, N>(*inFunc)(Real)) : _func(inFunc), _minT(Constants::NegativeInf), _maxT(Constants::PositiveInf) {}
-		ParametricCurve(Real minT, Real maxT, VectorN<Real, N>(*inFunc)(Real)) : _func(inFunc), _minT(minT), _maxT(maxT) {}
+		ParametricCurve(VectorN<Real, N>(*inFunc)(Real)) 
+			: _func(inFunc), _minT(Constants::NegativeInf), _maxT(Constants::PositiveInf) {}
+		ParametricCurve(Real minT, Real maxT, VectorN<Real, N>(*inFunc)(Real)) 
+			: _func(inFunc), _minT(minT), _maxT(maxT) {}
 
 		Real getMinT() const { return _minT; }
 		Real getMaxT() const { return _maxT; }
@@ -116,8 +119,10 @@ namespace MML
 		Real _maxT;
 		std::function<VectorN<Real, N>(Real)> _func;
 	public:
-		ParametricCurveFromStdFunc(std::function<VectorN<Real, N>(Real)>& inFunc) : _func(inFunc), _minT(Constants::NegativeInf), _maxT(Constants::PositiveInf) {}
-		ParametricCurveFromStdFunc(Real minT, Real maxT, std::function<VectorN<Real, N>(Real)>& inFunc) : _func(inFunc), _minT(minT), _maxT(maxT) {}
+		ParametricCurveFromStdFunc(std::function<VectorN<Real, N>(Real)>& inFunc) 
+			: _func(inFunc), _minT(Constants::NegativeInf), _maxT(Constants::PositiveInf) {}
+		ParametricCurveFromStdFunc(Real minT, Real maxT, std::function<VectorN<Real, N>(Real)>& inFunc) 
+			: _func(inFunc), _minT(minT), _maxT(maxT) {}
 
 		Real getMinT() const { return _minT; }
 		Real getMaxT() const { return _maxT; }
@@ -135,7 +140,7 @@ namespace MML
 	public:
 		ParametricCurveParametrized(VectorN<Real, N>(*inFunc)(Real), int numParams) : _func(inFunc), _minT(Constants::NegativeInf), _maxT(Constants::PositiveInf) 
 		{
-			_params.resize(numParams);
+			_params.Resize(numParams);
 		}
 		ParametricCurveParametrized(Real minT, Real maxT, VectorN<Real, N>(*inFunc)(Real), int numParams) : _func(inFunc), _params(numParams), _minT(minT), _maxT(maxT) {}
 

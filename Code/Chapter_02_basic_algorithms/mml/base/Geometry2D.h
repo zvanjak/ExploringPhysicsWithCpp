@@ -18,14 +18,14 @@ namespace MML
 		Line2D(const Point2Cartesian& pnt, const Vector2Cartesian dir)
 		{
 			_point = pnt;
-			_direction = dir.GetUnitVector();
+			_direction = dir.GetAsUnitVector();
 		}
 
 		Line2D(const Point2Cartesian& a, const Point2Cartesian& b)
 		{
 			Vector2Cartesian dir(a, b);
 			_point = a;
-			_direction = dir.GetUnitVector();
+			_direction = dir.GetAsUnitVector();
 		}
 
 		Point2Cartesian   StartPoint() const { return _point; }
@@ -86,12 +86,16 @@ namespace MML
 		Triangle2D(Point2Cartesian pnt1, Point2Cartesian pnt2, Point2Cartesian pnt3) : _pnt1(pnt1), _pnt2(pnt2), _pnt3(pnt3)
 		{ }
 
+		Real A() const { return _pnt1.Dist(_pnt2); }
+		Real B() const { return _pnt2.Dist(_pnt3); }
+		Real C() const { return _pnt3.Dist(_pnt1); }
+
 		Point2Cartesian  Pnt1() const { return _pnt1; }
-		Point2Cartesian& Pnt1() { return _pnt1; }
+		Point2Cartesian& Pnt1()				{ return _pnt1; }
 		Point2Cartesian  Pnt2() const { return _pnt2; }
-		Point2Cartesian& Pnt2() { return _pnt2; }
+		Point2Cartesian& Pnt2()				{ return _pnt2; }
 		Point2Cartesian  Pnt3() const { return _pnt3; }
-		Point2Cartesian& Pnt3() { return _pnt3; }
+		Point2Cartesian& Pnt3()				{ return _pnt3; }
 
 		Real Area() const
 		{

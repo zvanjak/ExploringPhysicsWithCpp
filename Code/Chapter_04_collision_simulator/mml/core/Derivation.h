@@ -4,10 +4,10 @@
 #include "MMLBase.h"
 
 #include "interfaces/IFunction.h"
+#include "interfaces/ITensorField.h"
 
 #include "base/VectorN.h"
 #include "base/MatrixNM.h"
-#include "base/Tensor.h"
 
 namespace MML
 {
@@ -25,6 +25,7 @@ namespace MML
 		/********************************************************************************************************************/
 		/********                               Numerical derivatives of FIRST order                                 ********/
 		/********************************************************************************************************************/
+		
 		//////////////////////////              RealFunction            //////////////////////////
 		static Real NDer1(const IRealFunction& f, Real x, Real h, Real* error = nullptr)
 		{
@@ -36,7 +37,7 @@ namespace MML
 				Real ym = f(x - h);
 				Real ypph = std::abs(yh - 2 * y0 + ym) / h;
 
-				// h*|f''(x)|*0.5 + (|f(x+h)+|f(x)|) * Constants::Epsilon/h
+				// h*|f''(x)|*0.5 + (|f(x+h)+|f(x)|) * eps/h
 				*error = ypph / 2 + (std::abs(yh) + std::abs(y0)) * Constants::Epsilon / h;
 			}
 			return diff / h;
@@ -54,10 +55,14 @@ namespace MML
 			return NDer1(f, x, NDer1_h, nullptr);
 		}
 		
-		static Real NDer1Left(const IRealFunction& f, Real x, Real* error = nullptr) { return NDer1(f, x - 2 * NDer1_h, NDer1_h, error); }
-		static Real NDer1Right(const IRealFunction& f, Real x, Real* error = nullptr) { return NDer1(f, x + 2 * NDer1_h, NDer1_h, error); }
-		static Real NDer1Left(const IRealFunction& f, Real x, Real h, Real* error = nullptr) { return NDer1(f, x - 2 * h, h, error); }
-		static Real NDer1Right(const IRealFunction& f, Real x, Real h, Real* error = nullptr) { return NDer1(f, x + 2 * h, h, error); }
+		static Real NDer1Left(const IRealFunction& f, Real x, Real* error = nullptr) 
+		{ return NDer1(f, x - 2 * NDer1_h, NDer1_h, error); }
+		static Real NDer1Right(const IRealFunction& f, Real x, Real* error = nullptr) 
+		{ return NDer1(f, x + 2 * NDer1_h, NDer1_h, error); }
+		static Real NDer1Left(const IRealFunction& f, Real x, Real h, Real* error = nullptr) 
+		{ return NDer1(f, x - 2 * h, h, error); }
+		static Real NDer1Right(const IRealFunction& f, Real x, Real h, Real* error = nullptr) 
+		{ return NDer1(f, x + 2 * h, h, error); }
 
 		static Real NSecDer1(const IRealFunction& f, Real x, Real h, Real* error = nullptr)
 		{
@@ -99,13 +104,15 @@ namespace MML
 
 		//////////////////////////             ScalarFunction           //////////////////////////
 		template <int N>
-		static Real NDer1Partial(const IScalarFunction<N>& f, int deriv_index, const VectorN<Real, N>& point, Real* error = nullptr)
+		static Real NDer1Partial(const IScalarFunction<N>& f, int deriv_index, const VectorN<Real, N>& point, 
+														 Real* error = nullptr)
 		{
 			return NDer1Partial(f, deriv_index, point, NDer1_h, error);
 		}
 
 		template <int N>
-		static Real NDer1Partial(const IScalarFunction<N>& f, int deriv_index, const VectorN<Real, N>& point, Real h, Real* error = nullptr)
+		static Real NDer1Partial(const IScalarFunction<N>& f, int deriv_index, const VectorN<Real, N>& point, 
+														 Real h, Real* error = nullptr)
 		{
 			Real     orig_x = point[deriv_index];
 
@@ -127,13 +134,15 @@ namespace MML
 		}
 
 		template <int N>
-		static Real NSecDer1Partial(const IScalarFunction<N>& f, int der_ind1, int der_ind2, const VectorN<Real, N>& point, Real* error = nullptr)
+		static Real NSecDer1Partial(const IScalarFunction<N>& f, int der_ind1, int der_ind2, 
+																const VectorN<Real, N>& point, Real* error = nullptr)
 		{
 			return NSecDer1Partial(f, der_ind1, der_ind2, point, NDer1_h, error);
 		}
 
 		template <int N>
-		static Real NSecDer1Partial(const IScalarFunction<N>& f, int der_ind1, int der_ind2, const VectorN<Real, N>& point, Real h, Real* error = nullptr)
+		static Real NSecDer1Partial(const IScalarFunction<N>& f, int der_ind1, int der_ind2, 
+																const VectorN<Real, N>& point, Real h, Real* error = nullptr)
 		{
 			Real x_orig_val = point[der_ind2];
 
@@ -156,13 +165,15 @@ namespace MML
 		}
 
 		template <int N>
-		static VectorN<Real, N> NDer1PartialByAll(const IScalarFunction<N>& f, const VectorN<Real, N>& point, VectorN<Real, N>* error = nullptr)
+		static VectorN<Real, N> NDer1PartialByAll(const IScalarFunction<N>& f, const VectorN<Real, N>& point, 
+																							VectorN<Real, N>* error = nullptr)
 		{
 			return NDer1PartialByAll(f, point, NDer1_h, error);
 		}
 
 		template <int N>
-		static VectorN<Real, N> NDer1PartialByAll(const IScalarFunction<N>& f, const VectorN<Real, N>& point, Real h, VectorN<Real, N>* error = nullptr)
+		static VectorN<Real, N> NDer1PartialByAll(const IScalarFunction<N>& f, const VectorN<Real, N>& point, 
+																							Real h, VectorN<Real, N>* error = nullptr)
 		{
 			VectorN<Real, N> ret;
 
@@ -251,7 +262,7 @@ namespace MML
 			return ret;
 		}
 
-		//////////////////////////             TensorField           //////////////////////////
+		//////////////////////////             TensorField           /////////////////////////////
 		template <int N>
 		static Real NDer1Partial(const ITensorField2<N>& f, int i, int j, int deriv_index, const VectorN<Real, N>& point, Real* error = nullptr)
 		{
@@ -336,7 +347,7 @@ namespace MML
 			return diff / h;
 		}
 
-		/////////////////////////             ParametricCurve           /////////////////////////
+		/////////////////////////             ParametricCurve           //////////////////////////
 		template <int N>
 		static VectorN<Real, N> NDer1(const IParametricCurve<N>& f, Real t, Real* error = nullptr)
 		{
@@ -1031,13 +1042,14 @@ namespace MML
 
 		//////////////////////////             VectorFunction           //////////////////////////
 		template <int N>
-		static Real NDer4Partial(const IVectorFunction<N>& f, int func_index, int deriv_index, const VectorN<Real, N>& point, Real* error = nullptr)
+		static Real NDer4Partial(const IVectorFunction<N>& f, int func_index, int deriv_index, const VectorN<Real, N>& point, 
+														 Real* error = nullptr)
 		{
 			return NDer4Partial(f, func_index, deriv_index, point, NDer4_h, error);
 		}
-
 		template <int N>
-		static Real NDer4Partial(const IVectorFunction<N>& f, int func_index, int deriv_index, const VectorN<Real, N>& point, Real h, Real* error = nullptr)
+		static Real NDer4Partial(const IVectorFunction<N>& f, int func_index, int deriv_index, const VectorN<Real, N>& point, Real h, 
+														 Real* error = nullptr)
 		{
 			Real     orig_x = point[deriv_index];
 
@@ -1070,15 +1082,15 @@ namespace MML
 			}
 			return (y2 + 8 * y1) / (12 * h);
 		}
-
 		template <int N>
-		static VectorN<Real, N> NDer4PartialByAll(const IVectorFunction<N>& f, int func_index, const VectorN<Real, N>& point, VectorN<Real, N>* error = nullptr)
+		static VectorN<Real, N> NDer4PartialByAll(const IVectorFunction<N>& f, int func_index, const VectorN<Real, N>& point, 
+																							VectorN<Real, N>* error = nullptr)
 		{
 			return NDer4PartialByAll(f, func_index, point, NDer4_h, error);
 		}
-
 		template <int N>
-		static VectorN<Real, N> NDer4PartialByAll(const IVectorFunction<N>& f, int func_index, const VectorN<Real, N>& point, Real h, VectorN<Real, N>* error = nullptr)
+		static VectorN<Real, N> NDer4PartialByAll(const IVectorFunction<N>& f, int func_index, const VectorN<Real, N>& point, Real h, 
+																							VectorN<Real, N>* error = nullptr)
 		{
 			VectorN<Real, N> ret;
 
@@ -1092,15 +1104,15 @@ namespace MML
 
 			return ret;
 		}
-
 		template <int N>
-		static MatrixNM<Real, N, N> NDer4PartialAllByAll(const IVectorFunction<N>& f, const VectorN<Real, N>& point, MatrixNM<Real, N, N>* error = nullptr)
+		static MatrixNM<Real, N, N> NDer4PartialAllByAll(const IVectorFunction<N>& f, const VectorN<Real, N>& point, 
+																										 MatrixNM<Real, N, N>* error = nullptr)
 		{
 			return NDer4PartialAllByAll(f, point, NDer4_h, error);
 		}
-
 		template <int N>
-		static MatrixNM<Real, N, N> NDer4PartialAllByAll(const IVectorFunction<N>& f, const VectorN<Real, N>& point, Real h, MatrixNM<Real, N, N>* error = nullptr)
+		static MatrixNM<Real, N, N> NDer4PartialAllByAll(const IVectorFunction<N>& f, const VectorN<Real, N>& point, Real h, 
+																										 MatrixNM<Real, N, N>* error = nullptr)
 		{
 			MatrixNM<Real, N, N> ret;
 

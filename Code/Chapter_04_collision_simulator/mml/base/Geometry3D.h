@@ -29,7 +29,6 @@ namespace MML
 			_point = pnt;
 			_direction = dir.GetAsUnitVector();
 		}
-
 		Line3D(const Point3Cartesian& a, const Point3Cartesian& b)
 		{
 			// check for same points
@@ -58,6 +57,7 @@ namespace MML
 			return Direction() == b.Direction();
 		}
 
+		// distance between point and line
 		Real Dist(const Point3Cartesian& pnt) const
 		{
 			// Bronshtein 3.394
@@ -78,7 +78,7 @@ namespace MML
 
 			return sqrt(numer / denom);
 		}
-
+		// distance between two lines
 		Real Dist(const Line3D& line) const
 		{
 			// https://math.stackexchange.com/questions/2213165/distance-between-two-lines-in-3d-space
@@ -88,7 +88,7 @@ namespace MML
 			Point3Cartesian  p2 = line.StartPoint();
 			Vector3Cartesian d2 = line.Direction();
 
-			Vector3Cartesian n = VectorProd(d1, d2);
+			Vector3Cartesian n = VectorProduct(d1, d2);
 
 			if (n.IsNullVec())
 			{
@@ -101,7 +101,7 @@ namespace MML
 				return Abs(n * Vector3Cartesian(p1, p2)) / n.NormL2();
 			}
 		}
-
+		// distance between two lines, while also returning nearest points on both lines
 		Real Dist(const Line3D& line, Point3Cartesian& out_line1_pnt, Point3Cartesian& out_line2_pnt) const
 		{
 			// https://math.stackexchange.com/questions/2213165/distance-between-two-lines-in-3d-space
@@ -112,7 +112,7 @@ namespace MML
 			Vector3Cartesian d2 = line.Direction();
 			Real dist = 0.0;
 
-			Vector3Cartesian n = VectorProd(d1, d2);
+			Vector3Cartesian n = VectorProduct(d1, d2);
 
 			if (n.IsNullVec())
 			{
@@ -126,8 +126,8 @@ namespace MML
 				// skew lines
 				dist = Abs(n * Vector3Cartesian(p1, p2)) / n.NormL2();
 
-				Real t1 = (VectorProd(d2, n) * Vector3Cartesian(p1, p2)) / POW2(n.NormL2());
-				Real t2 = (VectorProd(d1, n) * Vector3Cartesian(p1, p2)) / POW2(n.NormL2());
+				Real t1 = (VectorProduct(d2, n) * Vector3Cartesian(p1, p2)) / POW2(n.NormL2());
+				Real t2 = (VectorProduct(d1, n) * Vector3Cartesian(p1, p2)) / POW2(n.NormL2());
 
 				out_line1_pnt = p1 + t1 * d1;
 				out_line2_pnt = p2 + t2 * d2;
@@ -136,6 +136,7 @@ namespace MML
 			return dist;
 		}
 
+		// nearest point on line to given point
 		Point3Cartesian NearestPointOnLine(const Point3Cartesian& pnt) const
 		{
 			// https://math.stackexchange.com/questions/1521128/given-a-line-and-a-point-in-3d-how-to-find-the-closest-point-on-the-line         
@@ -147,7 +148,7 @@ namespace MML
 			return StartPoint() + t * line_dir;
 		}
 
-		// TODO - Intersection of two lines
+		// intersection of two lines
 		bool Intersection(const Line3D& line, Point3Cartesian& out_inter_pnt) const
 		{
 			// https://en.wikipedia.org/wiki/Skew_lines#Nearest_points
@@ -156,7 +157,7 @@ namespace MML
 			return true;
 		}
 
-		// TODO - pravac koji prolazi kroz tocku i sijece zadani pravac okomito
+		// perpendicular line that goes through givenpoint
 		Line3D PerpendicularLineThroughPoint(const Point3Cartesian& pnt)
 		{
 			Line3D ret;
@@ -175,7 +176,6 @@ namespace MML
 		SegmentLine3D(Point3Cartesian pnt1, Point3Cartesian pnt2) : _point1(pnt1), _point2(pnt2)
 		{
 		}
-
 		SegmentLine3D(Point3Cartesian pnt1, Vector3Cartesian direction, Real t)
 		{
 			_point1 = pnt1;
@@ -183,12 +183,12 @@ namespace MML
 		}
 
 		Point3Cartesian   StartPoint() const { return _point1; }
-		Point3Cartesian& StartPoint() { return _point1; }
+		Point3Cartesian&  StartPoint() { return _point1; }
 
 		Point3Cartesian   EndPoint() const { return _point2; }
-		Point3Cartesian& EndPoint() { return _point2; }
+		Point3Cartesian&  EndPoint() { return _point2; }
 
-		Point3Cartesian PointOnSegment(Real t)
+		Point3Cartesian		PointOnSegment(Real t)
 		{
 			if (t < 0.0 || t > 1.0)
 				throw std::runtime_error("SegmentLine3D::PointOnSegment - t not in [0,1]");
@@ -196,8 +196,8 @@ namespace MML
 			return _point1 + t * Direction();
 		}
 
-		Real                Length()    const { return _point1.Dist(_point2); }
-		Vector3Cartesian    Direction() const { return Vector3Cartesian(_point1, _point2); }
+		Real              Length()    const { return _point1.Dist(_point2); }
+		Vector3Cartesian  Direction() const { return Vector3Cartesian(_point1, _point2); }
 	};
 
 	class Plane3D
@@ -218,21 +218,19 @@ namespace MML
 			_C = unitNormal.Z();
 			_D = -(a.X() * unitNormal.X() + a.Y() * unitNormal.Y() + a.Z() * unitNormal.Z());
 		}
-
 		Plane3D(const Point3Cartesian& a, const Point3Cartesian& b, const Point3Cartesian& c)
-			: Plane3D(a, VectorProd(Vector3Cartesian(a, b), Vector3Cartesian(a, c)))
+			: Plane3D(a, VectorProduct(Vector3Cartesian(a, b), Vector3Cartesian(a, c)))
 		{
 		}
-
-		Plane3D(Real alpha, Real beta, Real gamma, Real d)      // Hesseov (normalni) oblik
+		// Hesse normal form
+		Plane3D(Real alpha, Real beta, Real gamma, Real d)
 		{
 			_A = cos(alpha);
 			_B = cos(beta);
 			_C = cos(gamma);
 			_D = -d;
 		}
-
-		// tri segmenta na koord osima ctor
+		// segments on coordinate axes
 		Plane3D(Real seg_x, Real seg_y, Real seg_z)
 		{
 			if (seg_x == 0 || seg_y == 0 || seg_z == 0)
@@ -249,15 +247,16 @@ namespace MML
 		static Plane3D GetYZPlane() { return Plane3D(Point3Cartesian(0, 0, 0), Vector3Cartesian(1, 0, 0)); }
 
 		Real  A() const { return _A; }
-		Real& A() { return _A; }
+		Real& A()				{ return _A; }
 		Real  B() const { return _B; }
-		Real& B() { return _B; }
+		Real& B()				{ return _B; }
 		Real  C() const { return _C; }
-		Real& C() { return _C; }
+		Real& C()				{ return _C; }
 		Real  D() const { return _D; }
-		Real& D() { return _D; }
+		Real& D()				{ return _D; }
 
-		Point3Cartesian GetPointOnPlane() const {
+		Vector3Cartesian	Normal() const { return Vector3Cartesian(_A, _B, _C); }
+		Point3Cartesian		GetPointOnPlane() const {
 			if (_A != 0.0)
 				return Point3Cartesian(-_D / _A, 0, 0);
 			else  if (_B != 0.0)
@@ -265,8 +264,6 @@ namespace MML
 			else
 				return Point3Cartesian(0, 0, -_D / _C);
 		}
-
-		Vector3Cartesian Normal() const { return Vector3Cartesian(_A, _B, _C); }
 
 		void GetCoordAxisSegments(Real& outseg_x, Real& outseg_y, Real& outseg_z)
 		{
@@ -286,6 +283,7 @@ namespace MML
 				outseg_z = Constants::PositiveInf;
 		}
 
+		// point to plane operations
 		bool IsPointOnPlane(const Point3Cartesian& pnt, Real defEps = 1e-15) const
 		{
 			return std::abs(_A * pnt.X() + _B * pnt.Y() + _C * pnt.Z() + _D) < defEps;
@@ -312,6 +310,7 @@ namespace MML
 			return ret;
 		}
 
+		// line to plane operations
 		bool IsLineOnPlane(const Line3D& line) const
 		{
 			// get two points
@@ -323,13 +322,11 @@ namespace MML
 			else
 				return false;
 		}
-
 		Real AngleToLine(const Line3D& line) const
 		{
 			// angle between line and normal to plane
 			return Constants::PI / 2.0 - line.Direction().AngleToVector(this->Normal());
 		}
-
 		bool IntersectionWithLine(const Line3D& line, Point3Cartesian& out_inter_pnt) const
 		{
 			// Calculate the direction vector of the line
@@ -355,6 +352,7 @@ namespace MML
 			return true;
 		}
 
+		// plane to plane operations
 		bool IsParallelToPlane(const Plane3D& plane) const
 		{
 			Vector3Cartesian norm1(_A, _B, _C);
@@ -381,10 +379,9 @@ namespace MML
 			// ili su paralelne, pa imamo neki broj, ili se sijeku pa je 0
 			return 0.0;
 		}
-		// TODO - check implementation IntersectionWithPlane
 		bool IntersectionWithPlane(const Plane3D& plane, Line3D& out_inter_line) const
 		{
-			Vector3Cartesian inter_dir = VectorProd(Normal(), plane.Normal());
+			Vector3Cartesian inter_dir = VectorProduct(Normal(), plane.Normal());
 
 			// Check if the planes are parallel
 			if (inter_dir.NormL2() == 0.0) {
@@ -419,9 +416,16 @@ namespace MML
 		{
 		}
 
-		Point3Cartesian& Pnt1() { return _pnt1; }
-		Point3Cartesian& Pnt2() { return _pnt2; }
-		Point3Cartesian& Pnt3() { return _pnt3; }
+		Real A() const { return _pnt1.Dist(_pnt2); }
+		Real B() const { return _pnt2.Dist(_pnt3); }
+		Real C() const { return _pnt3.Dist(_pnt1); }
+		
+		Point3Cartesian		Pnt1() const  { return _pnt1; }
+		Point3Cartesian&	Pnt1()				{ return _pnt1; }
+		Point3Cartesian		Pnt2() const  { return _pnt2; }
+		Point3Cartesian&	Pnt2()				{ return _pnt2; }
+		Point3Cartesian		Pnt3() const  { return _pnt3; }
+		Point3Cartesian&	Pnt3()				{ return _pnt3; }
 	};
 
 	class TriangleSurface3D : public Triangle3D, IParametricSurfaceRect<3>
@@ -491,12 +495,12 @@ namespace MML
 		virtual Real getMaxW() const { return _maxY; }
 
 		Vector3Cartesian getNormal() const {
-			return VectorProd(Vector3Cartesian(_pnt1, _pnt2), Vector3Cartesian(_pnt1, _pnt4)).GetAsUnitVector();
+			return VectorProduct(Vector3Cartesian(_pnt1, _pnt2), Vector3Cartesian(_pnt1, _pnt4)).GetAsUnitVector();
 		}
 		Point3Cartesian getCenter() const { return _center; }
 
 		Real getArea() const {
-			return VectorProd(Vector3Cartesian(_pnt1, _pnt2), Vector3Cartesian(_pnt1, _pnt4)).NormL2();
+			return VectorProduct(Vector3Cartesian(_pnt1, _pnt2), Vector3Cartesian(_pnt1, _pnt4)).NormL2();
 		}
 
 		// vraca dva Triangle3D - i orijentacija je parametar! (kako ce odabrati tocke)

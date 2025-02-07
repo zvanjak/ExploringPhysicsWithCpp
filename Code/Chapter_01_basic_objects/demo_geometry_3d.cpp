@@ -58,7 +58,7 @@ void Demo_Geometry_3D_operations()
 
     auto norm = vec1.NormL2();
     auto scal_prod = ScalarProduct(vec1, vec2);
-    auto vec_prod  = VectorProd(vec1, vec2);
+    auto vec_prod  = VectorProduct(vec1, vec2);
 
     bool b = vec1.IsParallelTo(vec2);
     bool c = vec1.IsPerpendicularTo(vec2);

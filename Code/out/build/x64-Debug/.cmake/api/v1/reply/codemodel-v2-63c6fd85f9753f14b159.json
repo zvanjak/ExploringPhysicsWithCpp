@@ -1,0 +1,123 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Chapter_18_Static_magnetic_fields",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_01_Basic_objects::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_01_Basic_objects-Debug-5387f2174fcfc4fa8065.json",
+					"name" : "Chapter_01_Basic_objects",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_02_Basic_alg::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_02_Basic_alg-Debug-ddb394d1355f1af91ca0.json",
+					"name" : "Chapter_02_Basic_alg",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_03_Vizualization::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_03_Vizualization-Debug-3ff50921f9aa65510bba.json",
+					"name" : "Chapter_03_Vizualization",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_04_Collision_calc::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_04_Collision_calc-Debug-9322638cdbc826b1269d.json",
+					"name" : "Chapter_04_Collision_calc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_05_Pendulum::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_05_Pendulum-Debug-9ef94d50002f4fa59adc.json",
+					"name" : "Chapter_05_Pendulum",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_09_NBody_problem::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_09_NBody_problem-Debug-b08141c44e17f0952c9c.json",
+					"name" : "Chapter_09_NBody_problem",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_13_Rigid_body::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_13_Rigid_body-Debug-f47a709b8e2832d77902.json",
+					"name" : "Chapter_13_Rigid_body",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Chapter_18_Static_magnetic_fields::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Chapter_18_Static_magnetic_fields-Debug-839f6127553fa9c85d98.json",
+					"name" : "Chapter_18_Static_magnetic_fields",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "E:/Projects/ExploringPhysicsWithCpp/Code/out/build/x64-Debug",
+		"source" : "E:/Projects/ExploringPhysicsWithCpp/Code"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

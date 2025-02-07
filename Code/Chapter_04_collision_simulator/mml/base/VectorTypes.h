@@ -57,7 +57,7 @@ namespace MML
 			return ret;
 		}
 
-		Vector2Cartesian GetUnitVector() const
+		Vector2Cartesian GetAsUnitVector() const
 		{
 			VectorN<Real, 2> res = (*this) / NormL2();
 
@@ -104,11 +104,11 @@ namespace MML
 	{
 	public:
 		Real  X() const { return _val[0]; }
-		Real& X() { return _val[0]; }
+		Real& X()				{ return _val[0]; }
 		Real  Y() const { return _val[1]; }
-		Real& Y() { return _val[1]; }
+		Real& Y()				{ return _val[1]; }
 		Real  Z() const { return _val[2]; }
-		Real& Z() { return _val[2]; }
+		Real& Z()				{ return _val[2]; }
 
 		Vector3Cartesian() : VectorN<Real, 3>{ 0.0, 0.0, 0.0 } {}
 		Vector3Cartesian(const VectorN<Real, 3>& b) : VectorN<Real, 3>{ b } {}
@@ -119,6 +119,20 @@ namespace MML
 			_val[0] = b.X() - a.X();
 			_val[1] = b.Y() - a.Y();
 			_val[2] = b.Z() - a.Z();
+		}
+		
+		Point3Cartesian getAsPoint()
+		{
+			return Point3Cartesian(_val[0], _val[1], _val[2]);
+		}
+		
+		Vector3Cartesian GetAsUnitVector() const
+		{
+			return Vector3Cartesian{ (*this) / NormL2() };
+		}
+		Vector3Cartesian GetAsUnitVectorAtPos(const Vector3Cartesian& pos) const
+		{
+			return Vector3Cartesian{ (*this) / NormL2() };
 		}
 
 		// For Cartesian vector, we will enable operator* to represent standard scalar product
@@ -154,11 +168,6 @@ namespace MML
 		friend Point3Cartesian operator+(const Point3Cartesian& a, const Vector3Cartesian& b) { return Point3Cartesian(a.X() + b[0], a.Y() + b[1], a.Z() + b[2]); }
 		friend Point3Cartesian operator-(const Point3Cartesian& a, const Vector3Cartesian& b) { return Point3Cartesian(a.X() - b[0], a.Y() - b[1], a.Z() - b[2]); }
 
-		Point3Cartesian getAsPoint()
-		{
-			return Point3Cartesian(_val[0], _val[1], _val[2]);
-		}
-
 		bool IsParallelTo(const Vector3Cartesian& b, Real eps = 1e-15) const
 		{
 			Real norm1 = NormL2();
@@ -182,20 +191,11 @@ namespace MML
 			return acos(cos_phi);
 		}
 
-		Vector3Cartesian GetAsUnitVector() const
-		{
-			return Vector3Cartesian{ (*this) / NormL2() };
-		}
-		Vector3Cartesian GetAsUnitVectorAtPos(const Vector3Cartesian& pos) const
-		{
-			return Vector3Cartesian{ (*this) / NormL2() };
-		}
-
 		friend Real ScalarProduct(const Vector3Cartesian& a, const Vector3Cartesian& b)
 		{
 			return a * b;
 		}
-		friend Vector3Cartesian VectorProd(const Vector3Cartesian& a, const Vector3Cartesian& b)
+		friend Vector3Cartesian VectorProduct(const Vector3Cartesian& a, const Vector3Cartesian& b)
 		{
 			Vector3Cartesian ret;
 
@@ -211,11 +211,11 @@ namespace MML
 	{
 	public:
 		Real  R()     const { return _val[0]; }
-		Real& R() { return _val[0]; }
+		Real& R()						{ return _val[0]; }
 		Real  Theta() const { return _val[1]; }
-		Real& Theta() { return _val[1]; }
+		Real& Theta()				{ return _val[1]; }
 		Real  Phi()   const { return _val[2]; }
-		Real& Phi() { return _val[2]; }
+		Real& Phi()					{ return _val[2]; }
 
 		Vector3Spherical() : VectorN<Real, 3>{ 0.0, 0.0, 0.0 } {}
 		Vector3Spherical(const VectorN<Real, 3>& b) : VectorN<Real, 3>{ b[0], b[1], b[2] } {}
@@ -269,21 +269,16 @@ namespace MML
 	{
 	public:
 		Real  T() const { return _val[0]; }
-		Real& T() { return _val[0]; }
+		Real& T()				{ return _val[0]; }
 		Real  X() const { return _val[1]; }
-		Real& X() { return _val[1]; }
+		Real& X()				{ return _val[1]; }
 		Real  Y() const { return _val[2]; }
-		Real& Y() { return _val[2]; }
+		Real& Y()				{ return _val[2]; }
 		Real  Z() const { return _val[3]; }
-		Real& Z() { return _val[3]; }
+		Real& Z()				{ return _val[3]; }
 
 		Vector4Lorentz() : VectorN<Real, 4>{ 0.0, 0.0, 0.0, 0.0 } {}
 		Vector4Lorentz(std::initializer_list<Real> list) : VectorN<Real, 4>(list) { }
-
-		Vector4Lorentz GetAsUnitVectorAtPos(const Vector4Lorentz& pos) const
-		{
-			return *this;
-		}
 	};
 
 	typedef Vector2Cartesian    Vec2Cart;

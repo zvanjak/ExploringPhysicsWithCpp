@@ -28,8 +28,8 @@ namespace MML
 			if (_data)
 			{
 				_data[0] = numElem > 0 ? new Type[numElem] : nullptr;
-				
-				if( numElem > 0 && _data[0] == nullptr)
+
+				if (numElem > 0 && _data[0] == nullptr)
 					throw MatrixAllocationError("Matrix::Init - allocation error", rows, cols);
 
 				for (int i = 1; i < rows; i++)
@@ -63,7 +63,7 @@ namespace MML
 		{
 			Init(rows, cols);
 
-			if( isRowWise)
+			if (isRowWise)
 				for (int i = 0; i < _rows; ++i)
 					for (int j = 0; j < _cols; ++j)
 						_data[i][j] = *val++;
@@ -86,10 +86,10 @@ namespace MML
 						if (strictMode)
 							throw MatrixDimensionError("Matrix::Matrix - not enough values in initializer list", _rows, _cols, -1, -1);
 						else
-							_data[i][j] = Type{0};
+							_data[i][j] = Type{ 0 };
 					}
 		}
-		
+
 		Matrix(const Matrix& m) : _rows(m._rows), _cols(m._cols)
 		{
 			Init(m._rows, m._cols);
@@ -138,33 +138,46 @@ namespace MML
 			}
 		}
 
-		void Resize(int rows, int cols)
+		void Resize(int rows, int cols, bool preserveElements = false)
 		{
-			if (rows <= 0 || cols <= 0)
-				throw MatrixDimensionError("Matrix::Resize - rowNum and colNum must be positive", rows, cols, -1, -1);
-
-			if (rows == RowNum() && cols == ColNum())      // nice :)
-				return;
-
-			if (_data != NULL) {
-				delete[](_data[0]);
-				delete[](_data);
+			if (preserveElements == true)
+			{
+				if (rows <= 0 || cols <= 0)
+					throw MatrixDimensionError("Matrix::Resize - rowNum and colNum must be positive", rows, cols, -1, -1);
+				
+				Type** oldData = _data;
+				int oldRows = _rows;
+				int oldCols = _cols;
+				
+				Init(rows, cols);
+				
+				for (int i = 0; i < std::min(_rows, oldRows); ++i)
+					for (int j = 0; j < std::min(_cols, oldCols); ++j)
+						_data[i][j] = oldData[i][j];
+				
+				delete[] oldData[0];
+				delete[] oldData;
 			}
+			else
+			{
+				if (rows <= 0 || cols <= 0)
+					throw MatrixDimensionError("Matrix::Resize - rowNum and colNum must be positive", rows, cols, -1, -1);
 
-			Init(rows, cols);
+				if (rows == RowNum() && cols == ColNum())      // nice :)
+					return;
 
-			for (int i = 0; i < _rows; ++i)
-				for (int j = 0; j < _cols; ++j)
-					_data[i][j] = 0;
-		}
-		
-		// TODO 
-		void AddRow(bool retainValues = true)
-		{
-		}
-		void AddCol(bool retainValues = true)
-		{
-		}
+				if (_data != NULL) {
+					delete[](_data[0]);
+					delete[](_data);
+				}
+
+				Init(rows, cols);
+
+				for (int i = 0; i < _rows; ++i)
+					for (int j = 0; j < _cols; ++j)
+						_data[i][j] = 0;
+			}
+		}   
 
 		///////////////////////              Standard stuff                //////////////////////
 		inline int RowNum() const { return _rows; }
@@ -232,6 +245,27 @@ namespace MML
 			return ret;
 		}
 
+		void InitRowWithVector(int rowInd, const Vector<Type>& vec)
+		{
+			if (rowInd < 0 || rowInd >= RowNum())
+				throw MatrixAccessBoundsError("Matrix::InitRowWithVector - invalid row index", rowInd, 0, RowNum(), ColNum());
+			if (vec.size() != ColNum())
+				throw MatrixDimensionError("Matrix::InitRowWithVector - vector size must match column number", RowNum(), ColNum(), -1, -1);
+			
+			for (int j = 0; j < ColNum(); j++)
+				_data[rowInd][j] = vec[j];
+		}
+		void InitColWithVector(int colInd, const Vector<Type>& vec)
+		{
+			if (colInd < 0 || colInd >= ColNum())
+				throw MatrixAccessBoundsError("Matrix::InitColumnWithVector - invalid column index", 0, colInd, RowNum(), ColNum());
+			if (vec.size() != RowNum())
+				throw MatrixDimensionError("Matrix::InitColumnWithVector - vector size must match row number", RowNum(), ColNum(), -1, -1);
+			
+			for (int i = 0; i < RowNum(); i++)
+				_data[i][colInd] = vec[i];
+		}
+		
 		void SwapRows(int k, int l)
 		{
 			if (k < 0 || k >= RowNum() || l < 0 || l >= RowNum())
@@ -370,7 +404,7 @@ namespace MML
 					norm = std::max(norm, Abs(_data[i][j]));
 			return norm;
 		}
-		
+
 		///////////////////////             Assignment operators           //////////////////////
 		Matrix& operator=(const Matrix& m)
 		{
@@ -404,11 +438,11 @@ namespace MML
 		}
 
 		///////////////////////               Access operators             //////////////////////
-		inline Type*				operator[](int i)							{ return _data[i]; }
-		inline const Type*	operator[](const int i) const { return _data[i]; }
+		inline Type* operator[](int i) { return _data[i]; }
+		inline const Type* operator[](const int i) const { return _data[i]; }
 
 		inline Type  operator()(int i, int j) const { return _data[i][j]; }
-		inline Type& operator()(int i, int j)			  { return _data[i][j]; }
+		inline Type& operator()(int i, int j) { return _data[i][j]; }
 
 		// version with checked access
 		Type  at(int i, int j) const
@@ -473,7 +507,7 @@ namespace MML
 
 			return temp;
 		}
-		
+
 		Matrix  operator+(const Matrix& b) const
 		{
 			if (_rows != b._rows || _cols != b._cols)
@@ -532,8 +566,8 @@ namespace MML
 
 			return	ret;
 		}
-		
-		Matrix  operator*(const Type &b) const
+
+		Matrix  operator*(const Type& b) const
 		{
 			int	i, j;
 			Matrix	ret(RowNum(), ColNum());
@@ -544,14 +578,14 @@ namespace MML
 
 			return ret;
 		}
-		Matrix& operator*=(const Type &b)
+		Matrix& operator*=(const Type& b)
 		{
 			for (int i = 0; i < RowNum(); i++)
 				for (int j = 0; j < ColNum(); j++)
 					_data[i][j] *= b;
 			return *this;
 		}
-		Matrix  operator/(const Type &b) const
+		Matrix  operator/(const Type& b) const
 		{
 			Matrix	ret(RowNum(), ColNum());
 
@@ -568,7 +602,7 @@ namespace MML
 					_data[i][j] /= b;
 			return *this;
 		}
-		
+
 		Vector<Type> operator*(const Vector<Type>& b) const
 		{
 			if (ColNum() != b.size())
@@ -585,7 +619,7 @@ namespace MML
 			return ret;
 		}
 
-		friend Matrix operator*(const Type &a, const Matrix<Type>& b)
+		friend Matrix operator*(const Type& a, const Matrix<Type>& b)
 		{
 			int	i, j;
 			Matrix	ret(b.RowNum(), b.ColNum());
@@ -723,25 +757,25 @@ namespace MML
 		void   Print(std::ostream& stream, int width, int precision) const
 		{
 			stream << "Rows: " << RowNum() << " Cols: " << ColNum();
-      
-      if( RowNum() == 0 || ColNum() == 0) {
-        stream << " - Empty matrix" << std::endl;
-        return;
-      }
-      else
-        stream << std::endl;
+
+			if (RowNum() == 0 || ColNum() == 0) {
+				stream << " - Empty matrix" << std::endl;
+				return;
+			}
+			else
+				stream << std::endl;
 
 			for (int i = 0; i < RowNum(); i++)
 			{
 				stream << "[ ";
 				for (int j = 0; j < ColNum(); j++)
 				{
-					if( j == ColNum() - 1 )
+					if (j == ColNum() - 1)
 						stream << std::setw(width) << std::setprecision(precision) << _data[i][j];
 					else
 						stream << std::setw(width) << std::setprecision(precision) << _data[i][j] << ", ";
 				}
-				if( i == RowNum() - 1 )
+				if (i == RowNum() - 1)
 					stream << " ]";
 				else
 					stream << " ]" << std::endl;
@@ -749,30 +783,30 @@ namespace MML
 		}
 		void   Print(std::ostream& stream, int width, int precision, Real zeroThreshold) const
 		{
-			stream << "Rows: " << RowNum() << " Cols: " << ColNum(); 
-      
-      if( RowNum() == 0 || ColNum() == 0) {
-        stream << " - Empty matrix" << std::endl;
-        return;
-      }
-      else
-        stream << std::endl;
+			stream << "Rows: " << RowNum() << " Cols: " << ColNum();
+
+			if (RowNum() == 0 || ColNum() == 0) {
+				stream << " - Empty matrix" << std::endl;
+				return;
+			}
+			else
+				stream << std::endl;
 
 			for (int i = 0; i < RowNum(); i++)
 			{
 				stream << "[ ";
 				for (int j = 0; j < ColNum(); j++)
 				{
-					Type value{0};
+					Type value{ 0 };
 					if (Abs(_data[i][j]) > zeroThreshold)
 						value = _data[i][j];
 
-					if( j == ColNum() - 1 )
+					if (j == ColNum() - 1)
 						stream << std::setw(width) << std::setprecision(precision) << value;
 					else
 						stream << std::setw(width) << std::setprecision(precision) << value << ", ";
 				}
-				if( i == RowNum() - 1 )
+				if (i == RowNum() - 1)
 					stream << " ]";
 				else
 					stream << " ]" << std::endl;
@@ -804,7 +838,7 @@ namespace MML
 				file >> rows >> cols;
 
 				outMat.Resize(rows, cols);
-				for (int  i = 0; i < outMat.RowNum(); i++)
+				for (int i = 0; i < outMat.RowNum(); i++)
 					for (int j = 0; j < outMat.ColNum(); j++)
 						file >> outMat[i][j];
 
