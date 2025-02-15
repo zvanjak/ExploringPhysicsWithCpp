@@ -1,9 +1,8 @@
 ﻿#include "MMLBase.h"
 
-#include "MMLBase.h"
-
 #include "interfaces/IODESystem.h"
 
+#include "base/BaseUtils.h"
 #include "base/Vector.h"
 
 #include "tools/ConsolePrinter.h"
@@ -15,6 +14,7 @@
 #include "algorithms/ODESystemSteppers.h"
 
 #include "algorithms/RootFinding.h"
+#include "algorithms/Statistics.h"
 
 
 
@@ -35,12 +35,34 @@ public:
 	}
 };
 
-double calculatePendulumPeriod(double length, double initialAngle) {
-	const double g = 9.81; // acceleration due to gravity
+double calculatePendulumPeriod(double length, double initialAngle)
+{
+	const double g = 9.81;
 	double k = std::sin(initialAngle / 2);
 	double ellipticIntegral = std::comp_ellint_1(k);
+
 	double period = 4 * std::sqrt(length / g) * ellipticIntegral;
+
 	return period;
+}
+
+Real calcFunctionPeriod(const IRealFunction& func, Real t1, Real t2)
+{
+	int		numFoundRoots;
+	Vector<Real> root_brack_x1(10), root_brack_x2(10);
+	FindRootBrackets(func, t1, t2, 4000, root_brack_x1, root_brack_x2, numFoundRoots);
+
+	Vector<Real> roots(numFoundRoots);
+	Vector<Real> rootDiffs(numFoundRoots - 1);
+	for (int i = 0; i < numFoundRoots; i++)
+	{
+		roots[i] = FindRootBisection(func, root_brack_x1[i], root_brack_x2[i], 1e-7);
+
+		if (i > 0)
+			rootDiffs[i - 1] = roots[i] - roots[i - 1];
+	}
+
+	return Statistics::Avg(rootDiffs);
 }
 
 void Demo_ExactPendulum()
@@ -56,26 +78,25 @@ void Demo_ExactPendulum()
 	Real	pendulumLen = 1.0;
 	PendulumODE		sys = PendulumODE(pendulumLen);
 
-	Real	t1 = 0.0, t2 = 1000.0;
-	int   expectNumSteps = 10000;
-	Real initAngle = 0.5;
+	Real	t1 = 0.0, t2 = 10.0;
+	int   expectNumSteps = 100;
+	Real	minSaveInterval = (t2 - t1) / expectNumSteps;
+	Real	initAngle = 0.5;
 	Vector<Real>	initCond{ initAngle, 0.0 };
 
-	ODESystemFixedStepSolver	sysSolver(pendSys, StepCalculators::RK4_Basic);
-	ODESystemSolution sol = sysSolver.integrate(initCond, t1, t2, expectNumSteps);
+	ODESystemFixedStepSolver	fixedSolver(pendSys, StepCalculators::RK4_Basic);
+	ODESystemSolution solFixed = fixedSolver.integrate(initCond, t1, t2, expectNumSteps);
 
-	const double h1 = 0.01, hmin = 0.0;
-	ODESystemSolver<RK4_CashKarp_Stepper> solver(sys);
-	Real minSaveInterval = (t2 - t1) / expectNumSteps;
-	ODESystemSolution sol3 = solver.integrate(initCond, t1, t2, minSaveInterval, 1e-06, h1, hmin);
+	ODESystemSolver<RK4_CashKarp_Stepper> adaptSolver(sys);
+	ODESystemSolution solAdapt = adaptSolver.integrate(initCond, t1, t2, minSaveInterval / 1.21, 1e-06, 0.01);
 
-	Vector<Real> x_fixed = sol.getXValues();
-	Vector<Real> y1_fixed = sol.getYValues(0);
-	Vector<Real> y2_fixed = sol.getYValues(1);
+	Vector<Real> x_fixed = solFixed.getXValues();
+	Vector<Real> y1_fixed = solFixed.getYValues(0);
+	Vector<Real> y2_fixed = solFixed.getYValues(1);
 
-	Vector<Real> x_adapt = sol3.getXValues();
-	Vector<Real> y1_adapt = sol3.getYValues(0);
-	Vector<Real> y2_adapt = sol3.getYValues(1);
+	Vector<Real> x_adapt = solAdapt.getXValues();
+	Vector<Real> y1_adapt = solAdapt.getYValues(0);
+	Vector<Real> y2_adapt = solAdapt.getYValues(1);
 
 	std::cout << "\n\n****  Runge-Kutta 4th order - fixed stepsize  **********  Runge-Kutta 4th order - adaptive stepper  ****\n";
 	std::vector<ColDesc>				vecNames{ ColDesc("t", 11, 2, 'F'), ColDesc("angle", 15, 8, 'F'), ColDesc("ang.vel.", 15, 8, 'F'),
@@ -84,48 +105,90 @@ void Demo_ExactPendulum()
 																			 &x_adapt, &y1_adapt, &y2_adapt };
 	VerticalVectorPrinter	vvp(vecNames, vecVals);
 
-	//vvp.Print();
+	vvp.Print();
 
-	PolynomInterpRealFunc 	solPolyInterp0 = sol3.getSolutionAsPolyInterp(0, 3);
-	PolynomInterpRealFunc 	solPolyInterp1 = sol3.getSolutionAsPolyInterp(1, 3);
-	SplineInterpRealFunc		solSplineInterp0 = sol3.getSolutionAsSplineInterp(0);
+	// getting solutions as polynomials
+	PolynomInterpRealFunc 	solFixedPolyInterp0 = solFixed.getSolutionAsPolyInterp(0, 3);
+	PolynomInterpRealFunc 	solFixedPolyInterp1 = solFixed.getSolutionAsPolyInterp(1, 3);
 
-	SplineInterpParametricCurve<2> spline(sol3.getYValues());
+	PolynomInterpRealFunc 	solAdaptPolyInterp0 = solAdapt.getSolutionAsPolyInterp(0, 3);
+	PolynomInterpRealFunc 	solAdaptPolyInterp1 = solAdapt.getSolutionAsPolyInterp(1, 3);
 
-	Visualizer::VisualizeRealFunction(solSplineInterp0, "Pendulum - angle in time", 0.0, 10.0, 200, "pendulum_angle.txt");
+	SplineInterpRealFunc		solSplineInterp0 = solAdapt.getSolutionAsSplineInterp(0);
+	SplineInterpParametricCurve<2> spline(solAdapt.getYValues());
+
+	Visualizer::VisualizeRealFunction(solAdaptPolyInterp0, "Pendulum - angle in time",
+		0.0, 10.0, 200, "pendulum_angle.txt");
 
 	// shown together
-	//Visualizer::VisualizeMultiRealFunction({ &solPolyInterp0, &solPolyInterp1 }, 
-	//																			"Pendulum - both variables", 0.0, 10.0, 200, "pendulum_multi_real_func.txt");
+	Visualizer::VisualizeMultiRealFunction({ &solAdaptPolyInterp0, &solAdaptPolyInterp1 },
+		"Pendulum - both variables", 0.0, 10.0, 200,
+		"pendulum_multi_real_func.txt");
 
 	// extracting period T from solutions
-	int numFoundRoots;
-	Vector<Real> root_brack_x1(10), root_brack_x2(10);
-	FindRootBrackets(solPolyInterp0, t1, t2, 4000, root_brack_x1, root_brack_x2, numFoundRoots);
+	Real periodLinear = 2.0 * Constants::PI * sqrt(pendulumLen / 9.81);
+	std::cout << "Pendulum period approx. linear : " << periodLinear << std::endl;
 
-	std::cout << "Found " << numFoundRoots << " roots" << std::endl;
-	Vector<Real> roots(numFoundRoots);
-	for (int i = 0; i < numFoundRoots; i++)
-	{
-		roots[i] = FindRootBisection(solPolyInterp0, root_brack_x1[i], root_brack_x2[i], 1e-7);
+	Real simulPeriodFixed = calcFunctionPeriod(solFixedPolyInterp0, t1, t2);
+	std::cout << "Pendulum period RK4 fixed step : " << 2 * simulPeriodFixed << std::endl;
 
-		std::cout << "Root " << i << " : " << roots[i];
-		if (i > 0)
-			std::cout << "      Difference: " << roots[i] - roots[i - 1];
-		std::cout << std::endl;
-	}
-	Real period = 2.0 * Constants::PI * sqrt(pendulumLen / 9.81);
-	std::cout << "Period of pendulum: " << period / 2 << std::endl;
+	Real simulPeriodAdapt = calcFunctionPeriod(solAdaptPolyInterp0, t1, t2);
+	std::cout << "Pendulum period RK4 adapt.step : " << 2 * simulPeriodAdapt << std::endl;
 
 	// calculate exact period for pendulum of length L, and given initial angle phi
 	Real exactPeriod = calculatePendulumPeriod(pendulumLen, initAngle);
-	std::cout << "Exact period of pendulum: " << exactPeriod / 2.0 << std::endl;
+	std::cout << "Pendulum period analytic exact : " << exactPeriod << std::endl;
 
 
+	// Comparing periods for different initial angles
+	Vector<Real> initAnglesDeg{ 1, 2, 5, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0 };
+	Vector<Real> initAngles(initAnglesDeg.size());				// convert to radians
+	for (int i = 0; i < initAngles.size(); i++)
+		initAngles[i] = initAnglesDeg[i] * Constants::PI / 180.0;
 
-	// comparison for different initial angles
+	Vector<Real> periods(initAngles.size());
+	Real periodLin, periodSimulFixed, periodSimulAdapt, periodExact;
 
-	// usporediti za različite eps 1e-2, 1e-3, ... , 1e-8 kako izgledauju stepovi i vizualizirati ih
+	std::cout << "\nAngle      Linear.      Exact     Diff %   Fix.step.sim Adapt.step.sim" << std::endl;
+	for (int i = 0; i < initAngles.size(); i++)
+	{
+		initCond[0] = initAngles[i];
+
+		// calculate period from fixed solution
+		ODESystemSolution			solF = fixedSolver.integrate(initCond, t1, t2, expectNumSteps);
+		PolynomInterpRealFunc solFInterp = solF.getSolutionAsPolyInterp(0, 3);
+		periodSimulFixed = calcFunctionPeriod(solFInterp, t1, t2);
+
+		// calculate period from adaptive solution
+		ODESystemSolution			solA = adaptSolver.integrate(initCond, t1, t2, minSaveInterval, 1e-06, 0.01);
+		PolynomInterpRealFunc solAInterp = solA.getSolutionAsPolyInterp(0, 3);
+		periodSimulAdapt = calcFunctionPeriod(solAInterp, t1, t2);
+
+		// analytical formulas
+		periodLin = 2.0 * Constants::PI * sqrt(pendulumLen / 9.81);
+		periodExact = calculatePendulumPeriod(pendulumLen, initAngles[i]);
+
+		double diffPercent = Abs(periodLin - periodExact) / periodExact * 100;
+		std::cout << std::setw(2) << initAnglesDeg[i] << " deg:  " << periodLin << "    " 
+			<< periodExact << "   " << std::setw(5) << diffPercent << "    " << 2 * periodSimulFixed << "    " << 2 * periodSimulAdapt << std::endl;
+	}
+
+	// Comparing number of adaptive steps needed, for given accuracy
+
+	Vector<Real> acc{ 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8 };
+	Vector<Real> numSteps(acc.size());
+
+	std::cout << "\nAccuracy   Num steps   OK steps   Bad steps" << std::endl;
+	for (int i = 0; i < acc.size(); i++)
+	{
+		ODESystemSolver<RK4_CashKarp_Stepper> adaptSolver(sys);
+		ODESystemSolution solAdapt = adaptSolver.integrate(initCond, t1, t2, minSaveInterval, acc[i], 0.01);
+		numSteps[i] = solAdapt.getTotalNumSteps();
+
+		std::cout << std::setw(7) << acc[i] << "        " << std::setw(3) << numSteps[i] << "        " 
+							<< std::setw(3) << solAdapt.getNumStepsOK() << "        " 
+							<< std::setw(3) << solAdapt.getNumStepsBad() << std::endl;
+	}
 }
 
 int main()

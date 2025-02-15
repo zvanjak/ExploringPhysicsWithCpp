@@ -73,18 +73,14 @@ namespace MML
 
 		int getDim() { return _sys.getDim(); }
 
+		// ODE system integrator using given stepper for adaptive stepsize control. 
+		// Integrates starting values ystart[1..nvar] from t1 to t2 with accuracy eps 
 		ODESystemSolution integrate(const Vector<Real>& initCond,
 																Real t1, Real t2, Real minSaveInterval,
-																Real eps, Real h1, Real hmin)
+																Real eps, Real h1, Real hmin = 0)
 		{
-			// ODE system integrator with adaptive stepsize control. 
-			// Integrates starting values ystart[1..nvar] from t1 to t2 with accuracy eps, 
-			// storing intermediate results in ODESystemSolution. 
-			// h1 should be set as a guessed first stepsize, hmin as the minimum allowed stepsize (can be zero). 
-			// ystart is replaced by values at the end of the integration interval. 
-			int i, stepNum, numSavedSteps=0, sysDim = _sys.getDim();
 			Real xsav, h;
-
+			int i, stepNum, numSavedSteps=0, sysDim = _sys.getDim();
 			int expectedSteps = (int)((t2 - t1) / h1) + 1;
 			ODESystemSolution sol(t1, t2, sysDim, expectedSteps);
 
@@ -92,11 +88,9 @@ namespace MML
 			_curr_x = initCond;
 			h = SIGN(h1, t2 - t1);
 
-			if (expectedSteps > 0)
-				xsav = _curr_t - minSaveInterval * 2.0;
+			if (expectedSteps > 0)	xsav = _curr_t - minSaveInterval * 2.0;
 
-			for (stepNum = 0; stepNum < Defaults::ODESolverMaxSteps; stepNum++)
-			{
+			for (stepNum = 0; stepNum < Defaults::ODESolverMaxSteps; stepNum++)	{
 				_sys.derivs(_curr_t, _curr_x, _curr_dxdt);
 
 				// storing intermediate results, if we have advanced enough
@@ -106,7 +100,6 @@ namespace MML
 					numSavedSteps++;
 					xsav = _curr_t;
 				}
-
 				// If stepsize overshoots end of interval, decrease to adjust
 				if ((_curr_t + h - t2) * (_curr_t + h - t1) > 0.0)
 					h = t2 - _curr_t;
@@ -124,12 +117,9 @@ namespace MML
 						sol.fillValues(numSavedSteps, _curr_t, _curr_x);
 					}
 					sol.setFinalSize(numSavedSteps);
-
 					return sol;
 				}
-
-				if (fabs(_stepper._hNext) <= hmin)
-					throw ODESolverError("Step size too small in integrate");
+				if (fabs(_stepper._hNext) <= hmin) throw ODESolverError("Step size too small in integrate");
 
 				h = _stepper._hNext;
 			}

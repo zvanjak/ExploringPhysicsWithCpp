@@ -52,47 +52,43 @@ namespace MML
 
 	public:
 		RK4_CashKarp_Stepper(IODESystem& sys,	Real& t, Vector<Real>& x, Vector<Real>& dxdt)
-			: StepperBase(sys, t, x, dxdt)
-		{	}
+			: StepperBase(sys, t, x, dxdt) { }
 
+		/*
+		Fifth-order Runge-Kutta step with monitoring of local truncation error to ensure accuracy and
+		adjust stepsize. Input are the dependent variable vector y[1.._numPoints] and its derivative dydx[1.._numPoints]
+		at the starting value of the independent variable x. Also input are the stepsize to be attempted
+		htry, the required accuracy eps, 
+		On output, y and x are replaced by their new values, hdid is the stepsize that was
+		actually accomplished, and hnext is the estimated next stepsize. derivs is the user-supplied
+		routine that computes the right-hand side derivatives.
+		*/
 		void doStep(Real htry, Real eps) override
 		{
-			/*
-			Fifth-order Runge-Kutta step with monitoring of local truncation error to ensure accuracy and
-			adjust stepsize. Input are the dependent variable vector y[1.._numPoints] and its derivative dydx[1.._numPoints]
-			at the starting value of the independent variable x. Also input are the stepsize to be attempted
-			htry, the required accuracy eps, and the vector xscale[1.._numPoints] against which the error is
-			scaled. On output, y and x are replaced by their new values, hdid is the stepsize that was
-			actually accomplished, and hnext is the estimated next stepsize. derivs is the user-supplied
-			routine that computes the right-hand side derivatives.
-			*/
-			const Real SAFETY = 0.9, PGROW = -0.2, PSHRNK = -0.25, ERRCON = 1.89e-4;
-			Real errmax, h, htemp, tnew;
 
-			int i, n = _sys.getDim();
+			const Real SAFETY = 0.9, PGROW = -0.2, PSHRNK = -0.25, ERRCON = 1.89e-4;
+			Real	errmax, h, htemp, tnew;
+			int		i, n = _sys.getDim();
 			Vector<Real> xerr(n), xscale(n), xtemp(n);
 
 			h = htry;						// Set stepsize to the initial trial value.
 			
-			// Scaling used to monitor accuracy. This general-purpose choice can be modified if need be
+			// Scaling used to monitor accuracy. 
 			for (i = 0; i < n; i++)
 				xscale[i] = fabs(_x[i]) + fabs(_dxdt[i] * h) + 1e-30;
 
-			for (;;) 
-			{
+			for (;;) {
 				_stepCalc.calcStep(_sys, _t, _x, _dxdt, h, xtemp, xerr);
 
-				// Evaluating accuracy.
-				errmax = 0.0;
+				errmax = 0.0;								// Evaluating accuracy.
 				for (int i = 0; i < n; i++)
 					errmax = std::max(errmax, fabs(xerr[i] / xscale[i]));
-				errmax /= eps;					// Scale relative to required tolerance
-				if (errmax <= 1.0)			// Step succeeded. Compute size of next step
-					break;
+				errmax /= eps;							// Scale relative to required tolerance
+				if (errmax <= 1.0)			
+					break;										// Step succeeded. Compute size of next step.	
 
 				htemp = SAFETY * h * pow(errmax, PSHRNK);
-				// Truncation error too large, reduce stepsize.
-				// No more than a factor of 10.
+				// Truncation error too large, reduce stepsize, but no more than a factor of 10.
 				if (h >= Real{ 0 })
 					h = std::max(htemp, 0.1 * h);
 				else
@@ -100,8 +96,7 @@ namespace MML
 
 				tnew = _t + h;
 
-				if (tnew == _t)
-					throw("stepsize underflow in rkqs");
+				if (tnew == _t)	throw("stepsize underflow in rkqs");
 			}
 			// computing size of the next step
 			if (errmax > ERRCON)

@@ -3,10 +3,9 @@
 
 #include "MMLBase.h"
 
-//#include "interfaces/IODESystem.h"
-
 #include "base/InterpolatedFunction.h"
 #include "core/ODESystem.h"
+
 
 namespace MML
 {
@@ -36,6 +35,10 @@ namespace MML
 
 		void incrementNumStepsOK()	{ _numStepsOK++; }
 		void incrementNumStepsBad() { _numStepsBad++; }
+
+		int getNumStepsOK() const { return _numStepsOK; }
+		int getNumStepsBad() const { return _numStepsBad; }
+		int getTotalNumSteps() const { return _numStepsOK + _numStepsBad; }
 
 		Vector<Real> getXValues() const { return _tval; }
 		Matrix<Real> getYValues() const { return _xval; }
@@ -76,7 +79,7 @@ namespace MML
 			_xval = new_yval;
 		}
 
-		LinearInterpRealFunc getSolutionAsLinearInterp(int component) const
+		LinearInterpRealFunc  getSolutionAsLinearInterp(int component) const
 		{
 			Vector<Real> xsave = _tval;
 			Vector<Real> ysave = _xval.VectorFromRow(component);
@@ -89,19 +92,12 @@ namespace MML
 			Vector<Real> ysave = _xval.VectorFromRow(component);
 			return PolynomInterpRealFunc(xsave, ysave, polyOrder + 1);
 		}
-		SplineInterpRealFunc getSolutionAsSplineInterp(int component) const
+		SplineInterpRealFunc  getSolutionAsSplineInterp(int component) const
 		{
 			Vector<Real> xsave = _tval;
 			Vector<Real> ysave = _xval.VectorFromRow(component);
 			return SplineInterpRealFunc(xsave, ysave);
 		}
-
-		//template<int N>
-		//ParametricCurveInterpolated<N> getSolutionAsParametricCurve() const
-		//{
-		//	ParametricCurveInterpolated<N> curve(_tval, _xval);
-		//	return curve;
-		//}
 
 		bool Serialize(std::string fileName, std::string title) const
 		{

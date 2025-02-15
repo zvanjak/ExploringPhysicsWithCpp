@@ -23,7 +23,8 @@ namespace MML
 		static inline std::string _pathVectorFieldViz{ MML_PATH_VectorFieldViz };
 
 	public:
-		static void VisualizeRealFunction(const IRealFunction& f, std::string title, Real x1, Real x2, int numPoints, std::string fileName)
+		static void VisualizeRealFunction(const IRealFunction& f, std::string title, 
+																			Real x1, Real x2, int numPoints, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveRealFuncEquallySpacedDetailed(f, title, x1, x2, numPoints, name);
@@ -36,7 +37,8 @@ namespace MML
 #endif
 		}
 
-		static void VisualizeMultiRealFunction(std::vector<IRealFunction*> funcs, std::string title, Real x1, Real x2, int numPoints, std::string fileName)
+		static void VisualizeMultiRealFunction(std::vector<IRealFunction*> funcs, std::string title, 
+																					 Real x1, Real x2, int numPoints, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveRealMultiFunc(funcs, title, x1, x2, numPoints, name);
@@ -49,7 +51,9 @@ namespace MML
 #endif
 		}
 
-		static void VisualizeScalarFunc2DCartesian(const IScalarFunction<2>& func, std::string title, Real x1, Real x2, int numPointsX, Real y1, Real y2, int numPointsY, std::string fileName)
+		static void VisualizeScalarFunc2DCartesian(const IScalarFunction<2>& func, std::string title, 
+																							 Real x1, Real x2, int numPointsX, 
+																							 Real y1, Real y2, int numPointsY, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveScalarFunc2DCartesian(func, title, x1, x2, numPointsX, y1, y2, numPointsY, name);
@@ -62,7 +66,10 @@ namespace MML
 #endif
 		}
 
-		static void VisualizeVectorField3DCartesian(const IVectorFunction<3>& func, std::string title, Real x1, Real x2, int numPointsX, Real y1, Real y2, int numPointsY, Real z1, Real z2, int numPointsZ, std::string fileName)
+		static void VisualizeVectorField3DCartesian(const IVectorFunction<3>& func, std::string title, 
+																								Real x1, Real x2, int numPointsX, 
+																								Real y1, Real y2, int numPointsY, 
+																								Real z1, Real z2, int numPointsZ, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveVectorFunc3DCartesian(func, title, x1, x2, numPointsX, y1, y2, numPointsY, z1, z2, numPointsZ, name);
@@ -75,7 +82,8 @@ namespace MML
 #endif
 		}
 
-		static void VisualizeParamCurve3D(const IRealToVectorFunction<3>& f, std::string title, Real t1, Real t2, int numPoints, std::string fileName)
+		static void VisualizeParamCurve3D(const IRealToVectorFunction<3>& f, std::string title, Real t1, Real t2, 
+																			int numPoints, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveParamCurveCartesian3D(f, title, t1, t2, numPoints, name);
@@ -104,7 +112,8 @@ namespace MML
 #endif
 		}
 
-		static void VisualizeODESysSolAsMultiFunc(const ODESystemSolution& sol, std::string title, std::string fileName)
+		static void VisualizeODESysSolAsMultiFunc(const ODESystemSolution& sol, 
+																							std::string title, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
 			sol.Serialize(name, title);
@@ -117,7 +126,8 @@ namespace MML
 #endif
 		}
 
-		static void VisualizeODESysSolAsParamCurve3(const ODESystemSolution& sol, std::string title, std::string fileName)
+		static void VisualizeODESysSolAsParamCurve3(const ODESystemSolution& sol, 
+																								std::string title, std::string fileName)
 		{
 			if (sol._sys_dim != 3)
 				throw std::runtime_error("VisualizeODESysSolAsParamCurve3: system dimension must be 3");

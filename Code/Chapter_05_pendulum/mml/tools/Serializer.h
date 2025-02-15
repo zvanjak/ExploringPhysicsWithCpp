@@ -11,7 +11,8 @@ namespace MML
 	{
 	public:
 		// Real function serialization 
-		static bool SaveRealMultiFunc(std::vector<IRealFunction*> funcs, std::string title, Real x1, Real x2, int count, std::string fileName)
+		static bool SaveRealMultiFunc(std::vector<IRealFunction*> funcs, std::string title, 
+																	Real x1, Real x2, int count, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -40,7 +41,8 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveRealFuncEquallySpaced(const IRealFunction& f, std::string title, Real x1, Real x2, int numPoints, std::string fileName)
+		static bool SaveRealFuncEquallySpaced(const IRealFunction& f, std::string title, 
+																					Real x1, Real x2, int numPoints, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -62,7 +64,8 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveRealFuncEquallySpacedDetailed(const IRealFunction& f, std::string title, Real x1, Real x2, int numPoints, std::string fileName)
+		static bool SaveRealFuncEquallySpacedDetailed(const IRealFunction& f, std::string title, 
+																									Real x1, Real x2, int numPoints, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -84,7 +87,8 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveRealFuncVariableSpaced(const IRealFunction& f, std::string title, Vector<Real> points, std::string fileName)
+		static bool SaveRealFuncVariableSpaced(const IRealFunction& f, std::string title, 
+																					 Vector<Real> points, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -104,7 +108,8 @@ namespace MML
 
 		// Parametric curve serialization
 		template<int N>
-		static bool SaveParamCurve(const IRealToVectorFunction<N>& f, std::string inType, std::string title, Real t1, Real t2, int numPoints, std::string fileName)
+		static bool SaveParamCurve(const IRealToVectorFunction<N>& f, std::string inType, std::string title, 
+															 Real t1, Real t2, int numPoints, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -129,7 +134,8 @@ namespace MML
 		}
 
 		template<int N>
-		static bool SaveParamCurve(const IRealToVectorFunction<N>& f, std::string inType, std::string title, Vector<Real> points, std::string fileName)
+		static bool SaveParamCurve(const IRealToVectorFunction<N>& f, std::string inType, std::string title, 
+															 Vector<Real> points, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -154,7 +160,8 @@ namespace MML
 		}
 
 		template<int N>
-		static bool SaveAsParamCurve(std::vector<VectorN<Real, N>> vals, std::string inType, std::string title, Real t1, Real t2, int numPoints, std::string fileName)
+		static bool SaveAsParamCurve(std::vector<VectorN<Real, N>> vals, std::string inType, std::string title, 
+																 Real t1, Real t2, int numPoints, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -188,7 +195,8 @@ namespace MML
 		//{
 		//    return SaveParamCurveAtPoints<2>("PARAMETRIC_CURVE_CARTESIAN_2D_AT_POINTS", points, fileName);
 		//}
-		static bool SaveParamCurveCartesian3D(const IRealToVectorFunction<3>& f, std::string title, Real t1, Real t2, int numPoints, std::string fileName)
+		static bool SaveParamCurveCartesian3D(const IRealToVectorFunction<3>& f, std::string title, 
+																					Real t1, Real t2, int numPoints, std::string fileName)
 		{
 			return SaveParamCurve<3>(f, "PARAMETRIC_CURVE_CARTESIAN_3D", title, t1, t2, numPoints, fileName);
 		}
@@ -214,7 +222,9 @@ namespace MML
 		//}
 
 		// Scalar function serialization
-		static bool SaveScalarFunc2DCartesian(const IScalarFunction<2>& f, std::string title, Real x1, Real x2, int numPointsX, Real y1, Real y2, int numPointsY, std::string fileName)
+		static bool SaveScalarFunc2DCartesian(const IScalarFunction<2>& f, std::string title, 
+																					Real x1, Real x2, int numPointsX, 
+																					Real y1, Real y2, int numPointsY, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -243,7 +253,10 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveScalarFunc3DCartesian(const IScalarFunction<3>& f, std::string title, Real x1, Real x2, int numPointsX, Real y1, Real y2, int numPointsY, Real z1, Real z2, int numPointsZ, std::string fileName)
+		static bool SaveScalarFunc3DCartesian(const IScalarFunction<3>& f, std::string title, 
+																					Real x1, Real x2, int numPointsX, 
+																					Real y1, Real y2, int numPointsY, 
+																					Real z1, Real z2, int numPointsZ, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -281,7 +294,10 @@ namespace MML
 		}
 
 		// vector function serialization
-		static bool SaveVectorFunc3D(const IVectorFunction<3>& f, std::string inType, std::string title, Real x1_start, Real x1_end, int numPointsX1, Real x2_start, Real x2_end, int numPointsX2, Real x3_start, Real x3_end, int numPointsX3, std::string fileName)
+		static bool SaveVectorFunc3D(const IVectorFunction<3>& f, std::string inType, std::string title, 
+																 Real x1_start, Real x1_end, int numPointsX1, 
+																 Real x2_start, Real x2_end, int numPointsX2, 
+																 Real x3_start, Real x3_end, int numPointsX3, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -308,7 +324,11 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveVectorFunc3D(const IVectorFunction<3>& f, std::string inType, std::string title, Real x1_start, Real x1_end, int numPointsX1, Real x2_start, Real x2_end, int numPointsX2, Real x3_start, Real x3_end, int numPointsX3, std::string fileName, Real upper_threshold)
+		static bool SaveVectorFunc3D(const IVectorFunction<3>& f, std::string inType, std::string title, 
+																 Real x1_start, Real x1_end, int numPointsX1, 
+																 Real x2_start, Real x2_end, int numPointsX2, 
+																 Real x3_start, Real x3_end, int numPointsX3, 
+																 std::string fileName, Real upper_threshold)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
@@ -337,14 +357,22 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveVectorFunc3DCartesian(const IVectorFunction<3>& f, std::string title, Real x1, Real x2, int numPointsX, Real y1, Real y2, int numPointsY, Real z1, Real z2, int numPointsZ, std::string fileName)
+		static bool SaveVectorFunc3DCartesian(const IVectorFunction<3>& f, std::string title, 
+																					Real x1, Real x2, int numPointsX, 
+																					Real y1, Real y2, int numPointsY, 
+																					Real z1, Real z2, int numPointsZ, std::string fileName)
 		{
 			return SaveVectorFunc3D(f, "VECTOR_FIELD_3D_CARTESIAN", title, x1, x2, numPointsX, y1, y2, numPointsY, z1, z2, numPointsZ, fileName);
 		}
-		static bool SaveVectorFunc3DCartesian(const IVectorFunction<3>& f, std::string title, Real x1, Real x2, int numPointsX, Real y1, Real y2, int numPointsY, Real z1, Real z2, int numPointsZ, std::string fileName, Real upper_threshold)
+		static bool SaveVectorFunc3DCartesian(const IVectorFunction<3>& f, std::string title, 
+																					Real x1, Real x2, int numPointsX, 
+																					Real y1, Real y2, int numPointsY, 
+																					Real z1, Real z2, int numPointsZ, std::string fileName, Real upper_threshold)
 		{
 			return SaveVectorFunc3D(f, "VECTOR_FIELD_3D_CARTESIAN", title, x1, x2, numPointsX, y1, y2, numPointsY, z1, z2, numPointsZ, fileName, upper_threshold);
 		}
+		
+		
 		static bool SaveVectorFuncSpherical(const IVectorFunction<3>& f, std::string title, Real r1, Real r2, int numPointsR, Real theta1, Real theta2, int numPointsTheta, Real phi1, Real phi2, int numPointsPhi, std::string fileName)
 		{
 			return SaveVectorFunc3D(f, "VECTOR_FIELD_SPHERICAL", title, r1, r2, numPointsR, theta1, theta2, numPointsTheta, phi1, phi2, numPointsPhi, fileName);
