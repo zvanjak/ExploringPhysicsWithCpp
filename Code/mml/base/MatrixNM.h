@@ -309,7 +309,7 @@ namespace MML
 			return !(*this == b);
 		}
 
-		bool IsEqual(const MatrixNM& b, Type eps = Defaults::MatrixEqualityPrecision) const
+		bool IsEqual(const MatrixNM& b, Type eps = Defaults::MatrixIsEqualTolerance) const
 		{
 			for (int i = 0; i < RowNum(); i++)
 				for (int j = 0; j < ColNum(); j++)
@@ -318,7 +318,7 @@ namespace MML
 
 			return true;
 		}
-		bool AreEqual(const MatrixNM& a, const MatrixNM& b, Type eps = Defaults::MatrixEqualityPrecision) const
+		bool AreEqual(const MatrixNM& a, const MatrixNM& b, Type eps = Defaults::MatrixIsEqualTolerance) const
 		{
 			return a.IsEqual(b, eps);
 		}

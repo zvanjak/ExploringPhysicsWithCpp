@@ -1,7 +1,13 @@
 #include "MMLBase.h"
 
+void Demo_DoublePendulum();
+void Demo_SphericalPendulum();
+
 int main()
 {
-    return 0;
+	Demo_DoublePendulum();
+	Demo_SphericalPendulum();
+
+	return 0;
 }
 

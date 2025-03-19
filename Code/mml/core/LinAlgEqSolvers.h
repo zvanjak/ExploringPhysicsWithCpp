@@ -14,6 +14,7 @@ namespace MML
 	class GaussJordanSolver
 	{
 	public:
+		// solving with Matrix RHS (ie. solving simultaneously for multiple RHS)
 		static bool Solve(Matrix<Type>& a, Matrix<Type>& b)
 		{
 			int i, icol, irow, j, k, l, ll;
@@ -69,12 +70,27 @@ namespace MML
 
 			return true;
 		}
+		
+		// solving for a given RHS vector
 		static bool Solve(Matrix<Type>& a, Vector<Type>& b)
 		{
 			auto bmat = Utils::ColumnMatrixFromVector(b);
 
 			bool ret = Solve(a, bmat);
 			b = bmat.VectorFromColumn(0);
+			return ret;
+		}
+
+		// solving for a given RHS vector, but with return value
+		// (in case of singular matrix 'a', exception is thrown)
+		static Vector<Type> SolveConst(Matrix<Type>& a, const Vector<Type>& b)
+		{
+			Vector<Type> ret(b.size());
+			Matrix<Type> bmat = Utils::ColumnMatrixFromVector(b);
+			bool success = Solve(a, bmat);
+			if (!success)
+				throw SingularMatrixError("GaussJordanSolver::Solve - Singular Matrix");
+			ret = bmat.VectorFromColumn(0);
 			return ret;
 		}
 	};

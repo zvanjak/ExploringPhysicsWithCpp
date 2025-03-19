@@ -38,6 +38,13 @@ namespace MML
 			else
 				throw MatrixAllocationError("Matrix::Init - allocation error", rows, cols);
 		}
+		void ReleaseMemory()
+		{
+			if (_data != NULL) {
+				delete[](_data[0]);
+				delete[](_data);
+			}
+		}
 
 	public:
 		typedef Type value_type;      // make Type available externally
@@ -132,10 +139,7 @@ namespace MML
 		}
 		~Matrix()
 		{
-			if (_data != NULL) {
-				delete[](_data[0]);
-				delete[](_data);
-			}
+			ReleaseMemory();
 		}
 
 		void Resize(int rows, int cols, bool preserveElements = false)
@@ -166,10 +170,7 @@ namespace MML
 				if (rows == RowNum() && cols == ColNum())      // nice :)
 					return;
 
-				if (_data != NULL) {
-					delete[](_data[0]);
-					delete[](_data);
-				}
+				ReleaseMemory();
 
 				Init(rows, cols);
 
@@ -178,6 +179,40 @@ namespace MML
 						_data[i][j] = 0;
 			}
 		}   
+		
+		Vector<Type> VectorFromRow(int rowInd) const
+		{
+			if (rowInd < 0 || rowInd >= RowNum())
+				throw MatrixAccessBoundsError("VectorFromRow - invalid row index", rowInd, 0, RowNum(), ColNum());
+
+			Vector<Type> ret(ColNum());
+			for (int i = 0; i < ColNum(); i++)
+				ret[i] = (*this)(rowInd, i);
+
+			return ret;
+		}
+		Vector<Type> VectorFromColumn(int colInd) const
+		{
+			if (colInd < 0 || colInd >= ColNum())
+				throw MatrixAccessBoundsError("VectorFromColumn - invalid column index", 0, colInd, RowNum(), ColNum());
+
+			Vector<Type> ret(RowNum());
+			for (int i = 0; i < RowNum(); i++)
+				ret[i] = (*this)(i, colInd);
+
+			return ret;
+		}
+		Vector<Type> VectorFromDiagonal() const
+		{
+			if (RowNum() != ColNum())
+				throw MatrixDimensionError("VectorFromDiagonal - must be square matrix", RowNum(), ColNum(), -1, -1);
+
+			Vector<Type> ret(RowNum());
+			for (int i = 0; i < RowNum(); i++)
+				ret[i] = (*this)(i, i);
+
+			return ret;
+		}
 
 		///////////////////////              Standard stuff                //////////////////////
 		inline int RowNum() const { return _rows; }
@@ -285,43 +320,8 @@ namespace MML
 				std::swap(_data[i][k], _data[i][l]);
 		}
 
-		///////////////////////          Matrix to Vector conversions      //////////////////////
-		Vector<Type> VectorFromRow(int rowInd) const
-		{
-			if (rowInd < 0 || rowInd >= RowNum())
-				throw MatrixAccessBoundsError("VectorFromRow - invalid row index", rowInd, 0, RowNum(), ColNum());
-
-			Vector<Type> ret(ColNum());
-			for (int i = 0; i < ColNum(); i++)
-				ret[i] = (*this)(rowInd, i);
-
-			return ret;
-		}
-		Vector<Type> VectorFromColumn(int colInd) const
-		{
-			if (colInd < 0 || colInd >= ColNum())
-				throw MatrixAccessBoundsError("VectorFromColumn - invalid column index", 0, colInd, RowNum(), ColNum());
-
-			Vector<Type> ret(RowNum());
-			for (int i = 0; i < RowNum(); i++)
-				ret[i] = (*this)(i, colInd);
-
-			return ret;
-		}
-		Vector<Type> VectorFromDiagonal() const
-		{
-			if (RowNum() != ColNum())
-				throw MatrixDimensionError("VectorFromDiagonal - must be square matrix", RowNum(), ColNum(), -1, -1);
-
-			Vector<Type> ret(RowNum());
-			for (int i = 0; i < RowNum(); i++)
-				ret[i] = (*this)(i, i);
-
-			return ret;
-		}
-
 		///////////////////////               Matrix properties            //////////////////////
-		bool IsUnit(double eps = Defaults::IsMatrixUnitPrecision) const
+		bool IsUnit(double eps = Defaults::IsMatrixUnitTolerance) const
 		{
 			for (int i = 0; i < RowNum(); i++)
 				for (int j = 0; j < ColNum(); j++)
@@ -334,7 +334,7 @@ namespace MML
 
 			return true;
 		}
-		bool IsDiagonal(double eps = Defaults::IsMatrixDiagonalPrecision) const
+		bool IsDiagonal(double eps = Defaults::IsMatrixDiagonalTolerance) const
 		{
 			for (int i = 0; i < RowNum(); i++)
 				for (int j = 0; j < ColNum(); j++)
@@ -380,6 +380,7 @@ namespace MML
 			return true;
 		}
 
+		///////////////////////             Matrix norm calculations       //////////////////////
 		Real NormL1() const
 		{
 			Real norm = 0;
@@ -438,11 +439,11 @@ namespace MML
 		}
 
 		///////////////////////               Access operators             //////////////////////
-		inline Type* operator[](int i) { return _data[i]; }
+		inline Type* operator[](int i)									 { return _data[i]; }
 		inline const Type* operator[](const int i) const { return _data[i]; }
 
 		inline Type  operator()(int i, int j) const { return _data[i][j]; }
-		inline Type& operator()(int i, int j) { return _data[i][j]; }
+		inline Type& operator()(int i, int j)				{ return _data[i][j]; }
 
 		// version with checked access
 		Type  at(int i, int j) const
@@ -478,7 +479,7 @@ namespace MML
 			return !(*this == b);
 		}
 
-		bool IsEqualTo(const Matrix<Type>& b, Type eps = Defaults::MatrixEqualityPrecision) const
+		bool IsEqualTo(const Matrix<Type>& b, Type eps = Defaults::MatrixIsEqualTolerance) const
 		{
 			if (RowNum() != b.RowNum() || ColNum() != b.ColNum())
 				return false;
@@ -492,7 +493,7 @@ namespace MML
 
 			return true;
 		}
-		static bool AreEqual(const Matrix& a, const Matrix& b, Type eps = Defaults::MatrixEqualityPrecision)
+		static bool AreEqual(const Matrix& a, const Matrix& b, Type eps = Defaults::MatrixIsEqualTolerance)
 		{
 			return a.IsEqualTo(b, eps);
 		}

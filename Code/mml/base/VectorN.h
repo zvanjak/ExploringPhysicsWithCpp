@@ -92,11 +92,11 @@ namespace MML
 
 			return true;
 		}
-		static bool AreEqual(const VectorN& a, const VectorN& b, Type eps = Defaults::VectorEqualityPrecision)
+		static bool AreEqual(const VectorN& a, const VectorN& b, Type eps = Defaults::VectorIsEqualTolerance)
 		{
 			return a.IsEqualTo(b, eps);
 		}
-		bool IsEqualTo(const VectorN& b, Type eps = Defaults::VectorEqualityPrecision) const
+		bool IsEqualTo(const VectorN& b, Type eps = Defaults::VectorIsEqualTolerance) const
 		{
 			for (int i = 0; i < N; i++)
 			{
@@ -270,7 +270,7 @@ namespace MML
 		}
 		friend std::ostream& operator<<(std::ostream& stream, const VectorN<Type, N>& a)
 		{
-			a.Print(stream, 15, 10);
+			a.Print(stream, Defaults::VectorNPrintWidth, Defaults::VectorNPrintPrecision);
 
 			return stream;
 		}

@@ -6,9 +6,6 @@
 #include "interfaces/IODESystem.h"
 #include "interfaces/IODESystemStepCalculator.h"
 
-#include "base/Vector.h"
-#include "base/Matrix.h"
-
 #include "core/ODESystem.h"
 
 #include "algorithms/ODESystemStepCalculators.h"
@@ -17,9 +14,9 @@ namespace MML
 {
 	// Base stepper class
 	class StepperBase {
-	public:
+	protected:
 		// references that stepper gets from the solver
-		IODESystem&		_sys;
+		const IODESystem&		_sys;
 
 		Real&					_t;
 		Vector<Real>& _x;
@@ -29,79 +26,74 @@ namespace MML
 		Real	_eps;
 
 		Real	_tOld;
-
 		Real	_hDone, _hNext;
 
 		Vector<Real> _xout, _xerr;
 
 	public:
-		StepperBase(IODESystem& sys, Real& t, Vector<Real>& x, Vector<Real>& dxdt)
+		StepperBase(const IODESystem& sys, Real& t, Vector<Real>& x, Vector<Real>& dxdt)
 			: _sys(sys), _t(t), _x(x), _dxdt(dxdt) {
 		}
 
 		virtual void doStep(Real htry, Real eps) = 0;
 
-		void setHDone(Real h) { _hDone = h; }	
-		void setHNext(Real h) { _hNext = h; }
+		Real	hDone() const { return _hDone; }
+		Real& hDone()				{ return _hDone; }
+
+		Real	hNext() const { return _hNext; }
+		Real& hNext()				{ return _hNext; }
 	};
 
-	class RK4_CashKarp_Stepper : public StepperBase
+	class RK5_CashKarp_Stepper : public StepperBase
 	{
 	private:
-		RK4_CashKarp_Calculator	_stepCalc;
+		RK5_CashKarp_Calculator	_stepCalc;
 
 	public:
-		RK4_CashKarp_Stepper(IODESystem& sys,	Real& t, Vector<Real>& x, Vector<Real>& dxdt)
-			: StepperBase(sys, t, x, dxdt)
-		{	}
+		// Initializing stepper with references to the solver's system, time, state and derivative vectors.
+		RK5_CashKarp_Stepper(const IODESystem& sys,	Real& t, Vector<Real>& x, Vector<Real>& dxdt)
+			: StepperBase(sys, t, x, dxdt) { }
 
+		/*
+		Implements fifth-order Runge-Kutta step with monitoring of local truncation error 
+		to ensure accuracy and	adjust stepsize. 
+		Inputs are the stepsize to be attempted htry and the required accuracy eps.
+		On output, references to x and t are replaced by their new values, hdid is the stepsize that was
+		actually accomplished, and hnext is the estimated next stepsize. 
+		*/
 		void doStep(Real htry, Real eps) override
 		{
-			/*
-			Fifth-order Runge-Kutta step with monitoring of local truncation error to ensure accuracy and
-			adjust stepsize. Input are the dependent variable vector y[1.._numPoints] and its derivative dydx[1.._numPoints]
-			at the starting value of the independent variable x. Also input are the stepsize to be attempted
-			htry, the required accuracy eps, and the vector xscale[1.._numPoints] against which the error is
-			scaled. On output, y and x are replaced by their new values, hdid is the stepsize that was
-			actually accomplished, and hnext is the estimated next stepsize. derivs is the user-supplied
-			routine that computes the right-hand side derivatives.
-			*/
 			const Real SAFETY = 0.9, PGROW = -0.2, PSHRNK = -0.25, ERRCON = 1.89e-4;
-			Real errmax, h, htemp, tnew;
-
-			int i, n = _sys.getDim();
+			Real	errmax, h, htemp, tnew;
+			int		i, n = _sys.getDim();
 			Vector<Real> xerr(n), xscale(n), xtemp(n);
 
 			h = htry;						// Set stepsize to the initial trial value.
 			
-			// Scaling used to monitor accuracy. This general-purpose choice can be modified if need be
+			// Scaling used to monitor accuracy. 
 			for (i = 0; i < n; i++)
-				xscale[i] = fabs(_x[i]) + fabs(_dxdt[i] * h) + 1e-30;
+				xscale[i] = std::abs(_x[i]) + std::abs(_dxdt[i] * h) + 1e-30;
 
-			for (;;) 
-			{
+			for (;;) {
 				_stepCalc.calcStep(_sys, _t, _x, _dxdt, h, xtemp, xerr);
 
-				// Evaluating accuracy.
-				errmax = 0.0;
+				errmax = 0.0;								// Evaluating accuracy.
 				for (int i = 0; i < n; i++)
 					errmax = std::max(errmax, fabs(xerr[i] / xscale[i]));
-				errmax /= eps;					// Scale relative to required tolerance
-				if (errmax <= 1.0)			// Step succeeded. Compute size of next step
-					break;
+				errmax /= eps;							// Scale relative to required tolerance
+				if (errmax <= 1.0)			
+					break;										// Step succeeded. Compute size of next step.	
 
 				htemp = SAFETY * h * pow(errmax, PSHRNK);
-				// Truncation error too large, reduce stepsize.
-				// No more than a factor of 10.
+				// Truncation error too large, reduce stepsize, but no more than a factor of 10.
 				if (h >= Real{ 0 })
 					h = std::max(htemp, 0.1 * h);
 				else
 					h = std::min(htemp, 0.1 * h);
 
 				tnew = _t + h;
-
-				if (tnew == _t)
-					throw("stepsize underflow in rkqs");
+				if (tnew == _t)	
+					throw ODESolverError("Stepsize underflow in RK5_CashKarp_Stepper::doStep()");
 			}
 			// computing size of the next step
 			if (errmax > ERRCON)
@@ -111,9 +103,7 @@ namespace MML
 
 			_hDone = h;
 			_t += h;
-
-			for (i = 0; i < n; i++)
-				_x[i] = xtemp[i];
+			_x = xtemp;
 		}
 	};
 }

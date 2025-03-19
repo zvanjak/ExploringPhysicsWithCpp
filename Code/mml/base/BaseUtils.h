@@ -64,13 +64,13 @@ namespace MML
 		static Real ExplicitToAngleRad(Real deg, Real min, Real sec) { return ExplicitToAngleDeg(deg, min, sec) * Constants::PI / 180.0; }
 
 		///////////////////                     Complex helpers                   ///////////////////
-		static bool AreEqual(const Complex& a, const Complex& b, double eps = Defaults::ComplexEqualityPrecision)
+		static bool AreEqual(const Complex& a, const Complex& b, double eps = Defaults::ComplexAreEqualTolerance)
 		{
 			if (std::abs(a.real() - b.real()) > eps || std::abs(a.imag() - b.imag()) > eps)
 				return false;
 			return true;
 		}
-		static bool AreEqualAbs(const Complex& a, const Complex& b, double eps = Defaults::ComplexAbsEqualityPrecision)
+		static bool AreEqualAbs(const Complex& a, const Complex& b, double eps = Defaults::ComplexAreEqualAbsTolerance)
 		{
 			if (Abs(a - b) > eps)
 				return false;
@@ -78,11 +78,11 @@ namespace MML
 		}
 
 		///////////////////                     Vector helpers                    ///////////////////
-		static bool AreEqual(const Vector<Real> &a, const Vector<Real> &b, Real eps = Defaults::VectorEqualityPrecision)
+		static bool AreEqual(const Vector<Real> &a, const Vector<Real> &b, Real eps = Defaults::VectorIsEqualTolerance)
 		{
 			return a.IsEqualTo(b, eps);
 		}
-		static bool AreEqual(const Vector<Complex>& a, const Vector<Complex>& b, double eps = Defaults::ComplexEqualityPrecision)
+		static bool AreEqual(const Vector<Complex>& a, const Vector<Complex>& b, double eps = Defaults::ComplexAreEqualTolerance)
 		{
 			if (a.size() != b.size())
 				return false;
@@ -93,7 +93,7 @@ namespace MML
 
 			return true;
 		}
-		static bool AreEqualAbs(const Vector<Complex>& a, const Vector<Complex>& b, double eps = Defaults::ComplexAbsEqualityPrecision)
+		static bool AreEqualAbs(const Vector<Complex>& a, const Vector<Complex>& b, double eps = Defaults::ComplexAreEqualAbsTolerance)
 		{
 			if (a.size() != b.size())
 				return false;
@@ -384,7 +384,7 @@ namespace MML
 		}
 
 		///////////////////                Real matrix helpers                   ///////////////////
-		static bool IsOrthogonal(const Matrix<Real>& mat, double eps = Defaults::IsMatrixOrthogonalPrecision)
+		static bool IsOrthogonal(const Matrix<Real>& mat, double eps = Defaults::IsMatrixOrthogonalTolerance)
 		{
 			if (mat.RowNum() != mat.ColNum())
 				throw MatrixDimensionError("IsOrthogonal - matrix must be square", mat.RowNum(), mat.ColNum(), -1, -1);

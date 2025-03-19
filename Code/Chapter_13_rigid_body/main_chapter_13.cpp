@@ -1,7 +1,6 @@
 #include "MMLBase.h"
 
 #include "base/VectorN.h"
-#include "base/Geometry3d.h"
 
 #include "core/Derivation.h"
 #include "core/Integration.h"
@@ -46,11 +45,11 @@ public:
             tensor(0,1) -= mass._mass * pos.X() * pos.Y();
             tensor(0,2) -= mass._mass * pos.X() * pos.Z();
             tensor(1,2) -= mass._mass * pos.Y() * pos.Z();
-
-            tensor(1,0) = tensor(0,1);
-            tensor(2,0) = tensor(0,2);
-            tensor(2,1) = tensor(1,2);
         }
+        tensor(1,0) = tensor(0,1);
+        tensor(2,0) = tensor(0,2);
+        tensor(2,1) = tensor(1,2);
+
         return tensor;
     }
 };
@@ -61,8 +60,7 @@ class IContinuousMass
 public:
     Real _x1, _x2;
 
-    Real (*_y1)(Real)
-      ;
+    Real (*_y1)(Real);
     Real (*_y2)(Real);
 
     Real (*_z1)(Real, Real);
@@ -75,25 +73,14 @@ public:
     virtual Real getDensity(const VectorN<Real, 3> &x) = 0;
 };
 
-// imamo density defined
-// imamo border defined
 class ContinuousMass : public IContinuousMass
 {
     Real (*_density)(const VectorN<Real, 3> &x);
-    //const IScalarFunction<3> &_densityFunc;
 
 public:
-    ContinuousMass(Real x1, Real x2, Real (*y1)(Real), Real (*y2)(Real), Real (*z1)(Real, Real), Real (*z2)(Real, Real))
-        : IContinuousMass(x1, x2, y1, y2, z1, z2)
-    { }  
-
     ContinuousMass(Real x1, Real x2, Real (*y1)(Real), Real (*y2)(Real), Real (*z1)(Real, Real), Real (*z2)(Real, Real), Real (*density)(const VectorN<Real, 3> &x))
         : IContinuousMass(x1, x2, y1, y2, z1, z2), _density(density)
     { } 
-
-    // ContinuousMass(Real x1, Real x2, Real (*y1)(Real), Real (*_secDerY)(Real), Real (*z1)(Real, Real), Real (*z2)(Real, Real), const IScalarFunction<3> &densityFunc)
-    //     : IContinuousMass(x1, x2, y1, _secDerY, z1, z2), _densityFunc(densityFunc)
-    // { } 
 
     virtual Real getDensity(const VectorN<Real, 3> &x)
     {
@@ -103,12 +90,8 @@ public:
 
 class ContinuousMassConstDensity : public IContinuousMass
 {
-    Real _density;;
+    Real _density;
 public:
-    ContinuousMassConstDensity(Real x1, Real x2, Real (*y1)(Real), Real (*y2)(Real), Real (*z1)(Real, Real), Real (*z2)(Real, Real))
-        : IContinuousMass(x1, x2, y1, y2, z1, z2)
-    { }  
-
     ContinuousMassConstDensity(Real x1, Real x2, Real (*y1)(Real), Real (*y2)(Real), Real (*z1)(Real, Real), Real (*z2)(Real, Real), Real density)
         : IContinuousMass(x1, x2, y1, y2, z1, z2), _density(density)
     { } 
@@ -119,26 +102,98 @@ public:
     }
 };
 
+class ContMassScalarFuncBase : public IScalarFunction<3>
+{
+protected:
+  IContinuousMass &_mass;
+public:
+	ContMassScalarFuncBase(IContinuousMass& mass) : _mass(mass) {}
+};
+
+struct Func11 : public ContMassScalarFuncBase
+{
+	Func11(IContinuousMass& mass) : ContMassScalarFuncBase(mass) {}
+	Real operator()(const VectorN<Real, 3>& x) const
+	{
+		return _mass.getDensity(x) * (x[1]*x[1] + x[2]*x[2]);
+	}
+};
+struct Func22 : public ContMassScalarFuncBase
+{
+	Func22(IContinuousMass& mass) : ContMassScalarFuncBase(mass) {}
+	Real operator()(const VectorN<Real, 3>& x) const
+	{
+		return _mass.getDensity(x) * (x[0] * x[0] + x[2] * x[2]);
+	}
+};
+struct Func33 : public ContMassScalarFuncBase
+{
+	Func33(IContinuousMass& mass) : ContMassScalarFuncBase(mass) {}
+	Real operator()(const VectorN<Real, 3>& x) const
+	{
+		return _mass.getDensity(x) * (x[0] * x[0] + x[1] * x[1]);
+	}
+};
+struct Func12 : public ContMassScalarFuncBase
+{
+	Func12(IContinuousMass& mass) : ContMassScalarFuncBase(mass) {}
+	Real operator()(const VectorN<Real, 3>& x) const
+	{
+		return -_mass.getDensity(x) * x[0] * x[1];
+	}
+};
+struct Func13 : public ContMassScalarFuncBase
+{
+	Func13(IContinuousMass& mass) : ContMassScalarFuncBase(mass) {}
+	Real operator()(const VectorN<Real, 3>& x) const
+	{
+		return -_mass.getDensity(x) * x[0] * x[2];
+	}
+};
+struct Func23 : public ContMassScalarFuncBase
+{
+	Func23(IContinuousMass& mass) : ContMassScalarFuncBase(mass) {}
+	Real operator()(const VectorN<Real, 3>& x) const
+	{
+		return -_mass.getDensity(x) * x[1] * x[2];
+	}
+};
+
 class ContinuousMassMomentOfInertiaTensorCalculator
 {
     IContinuousMass &_mass;
-    // za os kalkulacije pretpostavljamo z (ali, treba omoguciti to kao param)
 public:
     ContinuousMassMomentOfInertiaTensorCalculator(IContinuousMass &mass)
         : _mass(mass)
-    {
-    }
+    { }
 
+		// calculating tensor of inertia for continuous mass around z axis
     Tensor2<3> calculate()
     {
         Tensor2<3> tensor(2,0);
 
+				Func11 _f11(_mass);
+				Func22 _f22(_mass);
+				Func33 _f33(_mass);
+				Func12 _f12(_mass);
+				Func13 _f13(_mass);
+				Func23 _f23(_mass);
+				tensor(0, 0) = Integrate3D(_f11, _mass._x1, _mass._x2, _mass._y1, _mass._y2, _mass._z1, _mass._z2);
+				tensor(1, 1) = Integrate3D(_f22, _mass._x1, _mass._x2, _mass._y1, _mass._y2, _mass._z1, _mass._z2);
+				tensor(2, 2) = Integrate3D(_f33, _mass._x1, _mass._x2, _mass._y1, _mass._y2, _mass._z1, _mass._z2);
+				tensor(0, 1) = Integrate3D(_f12, _mass._x1, _mass._x2, _mass._y1, _mass._y2, _mass._z1, _mass._z2);
+				tensor(0, 2) = Integrate3D(_f13, _mass._x1, _mass._x2, _mass._y1, _mass._y2, _mass._z1, _mass._z2);
+				tensor(1, 2) = Integrate3D(_f23, _mass._x1, _mass._x2, _mass._y1, _mass._y2, _mass._z1, _mass._z2);
+				tensor(1, 0) = tensor(0, 1);
+				tensor(2, 0) = tensor(0, 2);
+				tensor(2, 1) = tensor(1, 2);
+
         ScalarFunctionFromStdFunc<3> fDensity( std::function<Real(const VectorN<Real, 3>&)>{ std::bind( &IContinuousMass::getDensity, &_mass, std::placeholders::_1) } );
 
-        Real vol = IntegrateVolume( fDensity, 
-                                    _mass._x1, _mass._x2,              
-                                    _mass._y1, _mass._y2,
-                                    _mass._z1, _mass._z2);
+        Real vol = Integrate3D( fDensity, 
+                                _mass._x1, _mass._x2,              
+                                _mass._y1, _mass._y2,
+                                _mass._z1, _mass._z2);
                                     
         return tensor;
     }
@@ -201,11 +256,35 @@ void Example13_tensor_of_inertia_discrete_masses()
 
 void Example13_tensor_of_intertia_continuous_mass()
 {
-  // sfera
-  // kvadar
-}
+  // create ContinuousMass representation for cube of constant density
+	ContinuousMassConstDensity cube(-0.5, 0.5, 
+                                  [](Real x) { return -0.5; }, [](Real x) { return 0.5; }, 
+                                  [](Real x, Real y) { return -0.5; }, [](Real x, Real y) { return 0.5; }, 
+                                  1.0);
 
-// TODO - kompleksna složena tijela
+	ContinuousMassMomentOfInertiaTensorCalculator calculator(cube);
+
+	Tensor2<3> tensor = calculator.calculate();
+
+	std::cout << "Tensor of inertia for cube: " << std::endl;
+	std::cout << tensor << std::endl;
+
+  // let's do the same for sphere
+	ContinuousMassConstDensity sphere(-1.0, 1.0,
+		[](Real x) { return -sqrt(1 - x * x); }, [](Real x) { return sqrt(1 - x * x); },
+		[](Real x, Real y) { return -sqrt(1 - x * x - y * y); }, [](Real x, Real y) { return sqrt(1 - x * x - y * y); },
+		1.0);
+
+	ContinuousMassMomentOfInertiaTensorCalculator calculator2(sphere);
+
+	Tensor2<3> tensor2 = calculator2.calculate();
+
+	std::cout << "Tensor of inertia for sphere: " << std::endl;
+	std::cout << tensor2 << std::endl;
+
+	std::cout << "Theoretical value for sphere: " << std::endl;
+	std::cout << 2.0 / 5.0 * (4.0 / 3.0 * Constants::PI)  << std::endl;
+}
 
 void Example13_tensor_of_inertia()
 {

@@ -17,7 +17,6 @@
 #include "algorithms/Statistics.h"
 
 
-
 using namespace MML;
 using namespace MML::RootFinding;
 
@@ -65,7 +64,7 @@ Real calcFunctionPeriod(const IRealFunction& func, Real t1, Real t2)
 	return Statistics::Avg(rootDiffs);
 }
 
-void Demo_ExactPendulum()
+void Demo_SimplePendulum()
 {
 	ODESystem pendSys(2, [](Real t, const Vector<Real>& x, Vector<Real>& dxdt)
 		{
@@ -87,16 +86,16 @@ void Demo_ExactPendulum()
 	ODESystemFixedStepSolver	fixedSolver(pendSys, StepCalculators::RK4_Basic);
 	ODESystemSolution solFixed = fixedSolver.integrate(initCond, t1, t2, expectNumSteps);
 
-	ODESystemSolver<RK4_CashKarp_Stepper> adaptSolver(sys);
+	ODESystemSolver<RK5_CashKarp_Stepper> adaptSolver(sys);
 	ODESystemSolution solAdapt = adaptSolver.integrate(initCond, t1, t2, minSaveInterval / 1.21, 1e-06, 0.01);
 
-	Vector<Real> x_fixed = solFixed.getXValues();
-	Vector<Real> y1_fixed = solFixed.getYValues(0);
-	Vector<Real> y2_fixed = solFixed.getYValues(1);
+	Vector<Real> x_fixed = solFixed.getTValues();
+	Vector<Real> y1_fixed = solFixed.getXValues(0);
+	Vector<Real> y2_fixed = solFixed.getXValues(1);
 
-	Vector<Real> x_adapt = solAdapt.getXValues();
-	Vector<Real> y1_adapt = solAdapt.getYValues(0);
-	Vector<Real> y2_adapt = solAdapt.getYValues(1);
+	Vector<Real> x_adapt = solAdapt.getTValues();
+	Vector<Real> y1_adapt = solAdapt.getXValues(0);
+	Vector<Real> y2_adapt = solAdapt.getXValues(1);
 
 	std::cout << "\n\n****  Runge-Kutta 4th order - fixed stepsize  **********  Runge-Kutta 4th order - adaptive stepper  ****\n";
 	std::vector<ColDesc>				vecNames{ ColDesc("t", 11, 2, 'F'), ColDesc("angle", 15, 8, 'F'), ColDesc("ang.vel.", 15, 8, 'F'),
@@ -115,7 +114,6 @@ void Demo_ExactPendulum()
 	PolynomInterpRealFunc 	solAdaptPolyInterp1 = solAdapt.getSolutionAsPolyInterp(1, 3);
 
 	SplineInterpRealFunc		solSplineInterp0 = solAdapt.getSolutionAsSplineInterp(0);
-	SplineInterpParametricCurve<2> spline(solAdapt.getYValues());
 
 	Visualizer::VisualizeRealFunction(solAdaptPolyInterp0, "Pendulum - angle in time",
 		0.0, 10.0, 200, "pendulum_angle.txt");
@@ -141,6 +139,7 @@ void Demo_ExactPendulum()
 
 
 	// Comparing periods for different initial angles
+
 	Vector<Real> initAnglesDeg{ 1, 2, 5, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0 };
 	Vector<Real> initAngles(initAnglesDeg.size());				// convert to radians
 	for (int i = 0; i < initAngles.size(); i++)
@@ -181,7 +180,7 @@ void Demo_ExactPendulum()
 	std::cout << "\nAccuracy   Num steps   OK steps   Bad steps" << std::endl;
 	for (int i = 0; i < acc.size(); i++)
 	{
-		ODESystemSolver<RK4_CashKarp_Stepper> adaptSolver(sys);
+		ODESystemSolver<RK5_CashKarp_Stepper> adaptSolver(sys);
 		ODESystemSolution solAdapt = adaptSolver.integrate(initCond, t1, t2, minSaveInterval, acc[i], 0.01);
 		numSteps[i] = solAdapt.getTotalNumSteps();
 
@@ -193,7 +192,7 @@ void Demo_ExactPendulum()
 
 int main()
 {
-	Demo_ExactPendulum();
+	Demo_SimplePendulum();
 
   return 0;
 }

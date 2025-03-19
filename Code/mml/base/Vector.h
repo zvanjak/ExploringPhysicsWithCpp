@@ -20,7 +20,7 @@ namespace MML
 			if(n < 0)
 				throw VectorInitializationError("Vector::Vector - negative size", n);
 
-			_elems.resize(n);
+			_elems.resize(n, {0});
 		}
 		explicit Vector(int n, const Type &val) {
 			if (n < 0)
@@ -37,7 +37,7 @@ namespace MML
 			for (int i = 0; i < n; ++i)
 				_elems[i] = vals[i];
 		}
-		explicit Vector(std::vector<Type> values) : _elems(values) {}
+		explicit Vector(const std::vector<Type> &values) : _elems(values) {}
 		explicit Vector(std::initializer_list<Type> list) : _elems(list) {}
 
 		static Vector GetUnitVector(int dimVec, int indUnit)
@@ -193,7 +193,7 @@ namespace MML
 		{
 			return !(*this == b);
 		}
-		bool IsEqualTo(const Vector& b, Real eps = Defaults::VectorEqualityPrecision) const
+		bool IsEqualTo(const Vector& b, Real eps = Defaults::VectorIsEqualTolerance) const
 		{
 			if (size() != b.size())
 				throw VectorDimensionError("Vector::IsEqual - vectors must be equal size", size(), b.size());
@@ -237,23 +237,6 @@ namespace MML
 		}
 
 		///////////////////////////               I/O                 ///////////////////////////
-		std::ostream& Print(std::ostream& stream, int width, int precision) const
-		{
-			stream << "[";
-			bool first = true;
-			for (const Type& x : _elems)
-			{
-				if (!first)
-					stream << ", ";
-				else
-					first = false;
-
-				stream << std::setw(width) << std::setprecision(precision) << x;
-			}
-			stream << "]";
-
-      return stream;
-		}
 		std::ostream& Print(std::ostream& stream, int width, int precision, Real zeroThreshold) const
 		{
 			stream << "[";
@@ -273,7 +256,11 @@ namespace MML
 			stream << "]";
 
 			return stream;
-		}    
+		}
+		std::ostream& Print(std::ostream& stream, int width, int precision) const
+		{
+			return Print(stream, width, precision, 0.0);
+		}
     std::ostream& PrintLine(std::ostream& stream, const std::string &msg, int width, int precision) const
 		{
 			stream << msg;
@@ -282,7 +269,14 @@ namespace MML
 
 			return stream;
 		}
-		
+		// print in column
+		std::ostream& PrintCol(std::ostream& stream, int width, int precision) const
+		{
+			for (const Type& x : _elems)
+				stream << std::setw(width) << std::setprecision(precision) << x << std::endl;
+			return stream;
+		}		
+
 		std::string to_string(int width, int precision) const
 		{
 			std::stringstream str;

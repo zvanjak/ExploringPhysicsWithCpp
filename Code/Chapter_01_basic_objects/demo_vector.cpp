@@ -1,12 +1,8 @@
-#ifdef MML_USE_SINGLE_HEADER
-#include "MML.h"
-#else
 #include "MMLBase.h"
 
 #include "base/Vector.h"
 #include "base/VectorN.h"
 #include "base/BaseUtils.h"
-#endif
 
 using namespace MML;
 
@@ -91,7 +87,6 @@ void Demo_Vector()
     vec_cmplx_2.Print(std::cout, 7, 3);
 }
 
-
 void Demo_VectorN()
 {
     std::cout << std::endl;
@@ -163,3 +158,4 @@ void Demo_VectorN()
     std::cout << vecN_cmplx_2.to_string(10, 5) << std::endl;
     vecN_cmplx_2.Print(std::cout, 7, 3);  
 }
+

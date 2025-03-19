@@ -50,8 +50,8 @@ namespace MML
 						_coeff[i][j] = 0.0;
 		}
 
-		int  NumContravar() const { return _numContravar; }
-		int  NumCovar()     const { return _numCovar; }
+		int  NumContravar() const override { return _numContravar; }
+		int  NumCovar()     const override { return _numCovar; }
 
 		bool IsContravar(int i) const { return _isContravar[i]; }
 		bool IsCovar(int i) const			{ return !_isContravar[i]; }
@@ -62,7 +62,7 @@ namespace MML
 		Tensor2 operator+(const Tensor2& other) const
 		{
 			if (_numContravar != other._numContravar || _numCovar != other._numCovar)
-				throw TensorCovarContravarAirthmeticError("Tensor2 operator+, wrong number of contravariant and covariant indices", _numContravar, _numCovar, other._numContravar, other._numCovar);
+				throw TensorCovarContravarArithmeticError("Tensor2 operator+, wrong number of contravariant and covariant indices", _numContravar, _numCovar, other._numContravar, other._numCovar);
 
 			Tensor2 result(_numContravar, _numCovar);
 
@@ -73,7 +73,7 @@ namespace MML
 		Tensor2 operator-(const Tensor2& other) const
 		{
 			if (_numContravar != other._numContravar || _numCovar != other._numCovar)
-				throw TensorCovarContravarAirthmeticError("Tensor2 operator-, wrong number of contravariant and covariant indices", _numContravar, _numCovar, other._numContravar, other._numCovar);
+				throw TensorCovarContravarArithmeticError("Tensor2 operator-, wrong number of contravariant and covariant indices", _numContravar, _numCovar, other._numContravar, other._numCovar);
 
 			Tensor2 result(_numContravar, _numCovar);
 
@@ -169,11 +169,11 @@ namespace MML
 				_isContravar[i] = true;
 		}
 
-		int   NumContravar() const { return _numContravar; }
-		int   NumCovar()     const { return _numCovar; }
+		int   NumContravar() const override { return _numContravar; }
+		int   NumCovar()     const override { return _numCovar; }
 
-		Real  operator()(int i, int j, int k) const { return _coeff[i][j][k]; }
-		Real& operator()(int i, int j, int k) { return _coeff[i][j][k]; }
+		Real  operator()(int i, int j, int k) const override { return _coeff[i][j][k]; }
+		Real& operator()(int i, int j, int k) override { return _coeff[i][j][k]; }
 
 		Real operator()(const VectorN<Real, N>& v1, const VectorN<Real, N>& v2, const VectorN<Real, N>& v3) const
 		{
@@ -242,11 +242,11 @@ namespace MML
 				_isContravar[i] = true;
 		}
 
-		int   NumContravar() const { return _numContravar; }
-		int   NumCovar()     const { return _numCovar; }
+		int   NumContravar() const override { return _numContravar; }
+		int   NumCovar()     const override { return _numCovar; }
 
-		Real  operator()(int i, int j, int k, int l) const { return _coeff[i][j][k][l]; }
-		Real& operator()(int i, int j, int k, int l) { return _coeff[i][j][k][l]; }
+		Real  operator()(int i, int j, int k, int l) const override { return _coeff[i][j][k][l]; }
+		Real& operator()(int i, int j, int k, int l) override { return _coeff[i][j][k][l]; }
 
 		Real operator()(const VectorN<Real, N>& v1, const VectorN<Real, N>& v2, const VectorN<Real, N>& v3, const VectorN<Real, N>& v4) const
 		{
@@ -345,11 +345,11 @@ namespace MML
 
 		}
 
-		int   NumContravar() const { return _numContravar; }
-		int   NumCovar()     const { return _numCovar; }
+		int   NumContravar() const override { return _numContravar; }
+		int   NumCovar()     const override { return _numCovar; }
 
-		Real  operator()(int i, int j, int k, int l, int m) const { return _coeff[i][j][k][l][m]; }
-		Real& operator()(int i, int j, int k, int l, int m) { return _coeff[i][j][k][l][m]; }
+		Real  operator()(int i, int j, int k, int l, int m) const override { return _coeff[i][j][k][l][m]; }
+		Real& operator()(int i, int j, int k, int l, int m) override { return _coeff[i][j][k][l][m]; }
 	};
 }
 #endif

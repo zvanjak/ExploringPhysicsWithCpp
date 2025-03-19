@@ -24,10 +24,11 @@ namespace MML
 
 		bool	operator==(const Point2Cartesian& b) const { return (X() == b.X()) && (Y() == b.Y()); }
 		bool	operator!=(const Point2Cartesian& b) const { return (X() != b.X()) || (Y() != b.Y()); }
+		bool  IsEqual(const Point2Cartesian& b, Real eps = Defaults::Pnt2CartIsEqualTolerance) const { return Dist(b) < eps; }
 
 		Point2Cartesian operator+(const Point2Cartesian& b) const { return Point2Cartesian(X() + b.X(), Y() + b.Y()); }
-		Point2Cartesian operator*(Real b) { return Point2Cartesian(X() * b, Y() * b); }
-		Point2Cartesian operator/(Real b) { return Point2Cartesian(X() / b, Y() / b); }
+		Point2Cartesian operator*(Real b) const { return Point2Cartesian(X() * b, Y() * b); }
+		Point2Cartesian operator/(Real b) const { return Point2Cartesian(X() / b, Y() / b); }
 
 		friend Point2Cartesian operator*(Real a, const Point2Cartesian& b) { return Point2Cartesian(a * b.X(), a * b.Y()); }
 	};	
@@ -53,6 +54,7 @@ namespace MML
 
 		bool	operator==(const Point2Polar& b) const { return (R() == b.R()) && (Phi() == b.Phi()); }
 		bool	operator!=(const Point2Polar& b) const { return (R() != b.R()) || (Phi() != b.Phi()); }
+		bool  IsEqual(const Point2Polar& b, Real eps = Defaults::Pnt2PolarIsEqualTolerance) const { return Dist(b) < eps; }
 
 		Point2Cartesian TransfToCart() const {  return Point2Cartesian(R() * cos(Phi()), R() * sin(Phi())); }
 
@@ -82,10 +84,11 @@ namespace MML
 
 		bool	operator==(const Point3Cartesian& b) const {return (X() == b.X()) && (Y() == b.Y()) && (Z() == b.Z()); }
 		bool	operator!=(const Point3Cartesian& b) const {return (X() != b.X()) || (Y() != b.Y()) || (Z() != b.Z()); }
+		bool  IsEqual(const Point3Cartesian& b, Real eps = Defaults::Pnt3CartIsEqualTolerance) const { return Dist(b) < eps; }
 
 		Point3Cartesian operator+(const Point3Cartesian& b) const { return Point3Cartesian(X() + b.X(), Y() + b.Y(), Z() + b.Z()); }
-		Point3Cartesian operator*(Real b) { return Point3Cartesian(X() * b, Y() * b, Z() * b); }
-		Point3Cartesian operator/(Real b) { return Point3Cartesian(X() / b, Y() / b, Z() / b); }
+		Point3Cartesian operator*(Real b) const { return Point3Cartesian(X() * b, Y() * b, Z() * b); }
+		Point3Cartesian operator/(Real b) const { return Point3Cartesian(X() / b, Y() / b, Z() / b); }
 
 		friend Point3Cartesian operator*(Real a, const Point3Cartesian& b) { return Point3Cartesian(a * b.X(), a * b.Y(), a * b.Z()); }
 	};
@@ -114,6 +117,7 @@ namespace MML
 		
 		bool	operator==(const Point3Spherical& b) const { return (R() == b.R()) && (Theta() == b.Theta()) && (Phi() == b.Phi()); }
 		bool	operator!=(const Point3Spherical& b) const { return (R() != b.R()) || (Theta() != b.Theta()) || (Phi() != b.Phi()); }
+		bool  IsEqual(const Point3Spherical& b, Real eps = Defaults::Pnt3SphIsEqualTolerance) const { return Dist(b) < eps; }
 
 		Point3Cartesian TransfToCart() const
 		{
@@ -150,6 +154,7 @@ namespace MML
 		
 		bool	operator==(const Point3Cylindrical& b) const { return (R() == b.R()) && (Phi() == b.Phi()) && (Z() == b.Z()); }
 		bool	operator!=(const Point3Cylindrical& b) const { return (R() != b.R()) || (Phi() != b.Phi()) || (Z() != b.Z()); }
+		bool  IsEqual(const Point3Cylindrical& b, Real eps = Defaults::Pnt3CylIsEqualTolerance) const { return Dist(b) < eps; }
 
 		Point3Cartesian TransfToCart() const
 		{
@@ -180,28 +185,28 @@ namespace MML
 
 		Real Area() const
 		{
-			Real s = (_a + _b + _c) / 2.0;
-			return sqrt(s * (s - _a) * (s - _b) * (s - _c));
+			Real s = (A() + B() + C()) / 2.0;
+			return sqrt(s * (s - A()) * (s - B()) * (s - C()));
 		}
 		
 		bool IsRight() const
 		{
-			return ( POW2(_a) + POW2(_b) == POW2(_c)) || 
-							(POW2(_a) + POW2(_c) == POW2(_b)) || 
-							(POW2(_b) + POW2(_c) == POW2(_a) );
+			return (hypot(A(), B()) == C() || hypot(A(), C()) == B() || hypot(B(), C()) == A());
 		}
-		bool IsIsosceles() const
+		bool IsIsosceles() const		// two sides are the same length
 		{
-			return (_a == _b) || (_a == _c) || (_b == _c);
+			return (A() == B()) || (A() == C()) || (B() == C());
 		}
-		bool IsEquilateral() const
+		bool IsEquilateral() const	// all sides are the same length
 		{
-			return (_a == _b) && (_a == _c);
+			return (A() == B()) && (A() == C());
 		}
 	};
 
-	typedef Point2Cartesian Pnt2Cart;
-	typedef Point2Polar			Pnt2Pol;
-	typedef Point3Cartesian Pnt3Cart;
+	typedef Point2Cartesian		Pnt2Cart;
+	typedef Point2Polar				Pnt2Pol;
+	typedef Point3Cartesian		Pnt3Cart;
+	typedef Point3Spherical		Pnt3Sph;
+	typedef Point3Cylindrical Pnt3Cyl;
 }
 #endif

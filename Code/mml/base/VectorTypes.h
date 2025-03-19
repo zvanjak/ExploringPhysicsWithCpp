@@ -35,11 +35,18 @@ namespace MML
 			return X()*b.X() + Y()*b.Y();
 		}
 
-		friend Vector2Cartesian operator*(const Vector2Cartesian& a, Real b)
+		Vector2Cartesian operator*(Real b) const
 		{
 			Vector2Cartesian ret;
 			for (int i = 0; i < 2; i++)
-				ret._val[i] = a[i] * b;
+				ret._val[i] = _val[i] * b;
+			return ret;
+		}
+		Vector2Cartesian operator/(Real b) const
+		{
+			Vector2Cartesian ret;
+			for (int i = 0; i < 2; i++)
+				ret._val[i] = _val[i] / b;
 			return ret;
 		}
 		friend Vector2Cartesian operator*(Real a, const Vector2Cartesian& b)
@@ -49,12 +56,19 @@ namespace MML
 				ret._val[i] = a * b[i];
 			return ret;
 		}
-		friend Vector2Cartesian operator/(const Vector2Cartesian& a, Real b)
+
+		// equality operators
+		bool operator==(const Vector2Cartesian& b) const
 		{
-			Vector2Cartesian ret;
-			for (int i = 0; i < 2; i++)
-				ret._val[i] = a[i] / b;
-			return ret;
+			return (X() == b.X()) && (Y() == b.Y());
+		}
+		bool operator!=(const Vector2Cartesian& b) const
+		{
+			return (X() != b.X()) || (Y() != b.Y());
+		}
+		bool IsEqual(const Vector2Cartesian& b, Real absEps = Defaults::Vec2CartIsEqualTolerance) const
+		{
+			return (std::abs(X() - b.X()) < absEps) && (std::abs(Y() - b.Y()) < absEps);
 		}
 
 		Vector2Cartesian GetAsUnitVector() const
@@ -141,11 +155,11 @@ namespace MML
 			return X()*b.X() + Y()*b.Y() + Z()*b.Z();
 		}
 
-		friend Vector3Cartesian operator*(const Vector3Cartesian& a, Real b)
+		Vector3Cartesian operator*(Real b) const
 		{
 			Vector3Cartesian ret;
 			for (int i = 0; i < 3; i++)
-				ret._val[i] = a[i] * b;
+				ret._val[i] = _val[i] * b;
 			return ret;
 		}
 		friend Vector3Cartesian operator*(Real a, const Vector3Cartesian& b)
@@ -155,20 +169,32 @@ namespace MML
 				ret._val[i] = a * b[i];
 			return ret;
 		}
-		friend Vector3Cartesian operator/(const Vector3Cartesian& a, Real b)
+		Vector3Cartesian operator/(Real b) const
 		{
 			Vector3Cartesian ret;
 			for (int i = 0; i < 3; i++)
-				ret._val[i] = a[i] / b;
+				ret._val[i] = _val[i] / b;
 			return ret;
 		}
 
-		friend Vector3Cartesian operator-(const Point3Cartesian& a, const Point3Cartesian& b) { return  Vector3Cartesian{ a.X() - b.X(), a.Y() - b.Y(), a.Z() - b.Z() }; }
+		// equality operators
+		bool operator==(const Vector3Cartesian& b) const
+		{
+			return (X() == b.X()) && (Y() == b.Y()) && (Z() == b.Z());
+		}
+		bool operator!=(const Vector3Cartesian& b) const
+		{
+			return (X() != b.X()) || (Y() != b.Y()) || (Z() != b.Z());
+		}
+		bool IsEqual(const Vector3Cartesian& b, Real absEps = Defaults::Vec3CartIsEqualTolerance) const
+		{
+			return (std::abs(X() - b.X()) < absEps) && (std::abs(Y() - b.Y()) < absEps) && (std::abs(Z() - b.Z()) < absEps);
+		}
 
 		friend Point3Cartesian operator+(const Point3Cartesian& a, const Vector3Cartesian& b) { return Point3Cartesian(a.X() + b[0], a.Y() + b[1], a.Z() + b[2]); }
 		friend Point3Cartesian operator-(const Point3Cartesian& a, const Vector3Cartesian& b) { return Point3Cartesian(a.X() - b[0], a.Y() - b[1], a.Z() - b[2]); }
 
-		bool IsParallelTo(const Vector3Cartesian& b, Real eps = 1e-15) const
+		bool IsParallelTo(const Vector3Cartesian& b, Real eps = Defaults::Vec3CartIsParallelTolerance) const
 		{
 			Real norm1 = NormL2();
 			Real norm2 = b.NormL2();
@@ -222,8 +248,6 @@ namespace MML
 		Vector3Spherical(Real r, Real theta, Real phi) : VectorN<Real, 3>{ r, theta, phi } {}
 		Vector3Spherical(std::initializer_list<Real> list) : VectorN<Real, 3>(list) { }
 
-		// TODO - HIGH, HARD, osnovne operacije +, -
-		// sve operaciju pretpostavlju da se odvijaju NA ISTOJ TOCKI U PROSTORU
 		Vector3Spherical GetAsUnitVectorAtPos(const Vector3Spherical& pos) const
 		{
 			// TODO 1.1 - VERIFY this!!!
@@ -246,19 +270,17 @@ namespace MML
 	{
 	public:
 		Real    R()   const { return _val[0]; }
-		Real& R() { return _val[0]; }
+		Real& R()						{ return _val[0]; }
 		Real    Phi() const { return _val[1]; }
-		Real& Phi() { return _val[1]; }
+		Real& Phi()					{ return _val[1]; }
 		Real    Z()   const { return _val[2]; }
-		Real& Z() { return _val[2]; }
+		Real& Z()						{ return _val[2]; }
 
 		Vector3Cylindrical() : VectorN<Real, 3>{ 0.0, 0.0, 0.0 } {}
 		Vector3Cylindrical(const VectorN<Real, 3>& b) : VectorN<Real, 3>{ b[0], b[1], b[2] } {}
 		Vector3Cylindrical(Real r, Real phi, Real z) : VectorN<Real, 3>{ r, phi, z } {}
 		Vector3Cylindrical(std::initializer_list<Real> list) : VectorN<Real, 3>(list) { }
 
-		// TODO - MED, implement Vector3Cylindrical GetAsUniTVector()
-		// TODO - MED, razmisliti generalno vektor i vektor at point
 		Vector3Cylindrical GetAsUnitVectorAtPos(const Vector3Cylindrical& pos) const
 		{
 			return Vector3Cylindrical{ R(), Phi() / pos.R(), Z() };
@@ -285,5 +307,6 @@ namespace MML
 	typedef Vector3Cartesian    Vec3Cart;
 	typedef Vector3Spherical    Vec3Sph;
 	typedef Vector3Cylindrical  Vec3Cyl;
+	typedef Vector4Lorentz      Vec4Lor;
 }
 #endif

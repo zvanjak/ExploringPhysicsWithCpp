@@ -8,8 +8,6 @@
 
 using namespace MML;
 
-// TODO - BIG, EMPTY!!! - Demo core utils
-// testirati Rank, ... 
 void Demo_BaseUtils()
 {
     std::cout << std::endl;

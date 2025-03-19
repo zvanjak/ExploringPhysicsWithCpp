@@ -3,10 +3,9 @@
 
 #include "MMLBase.h"
 
-//#include "interfaces/IODESystem.h"
-
 #include "base/InterpolatedFunction.h"
 #include "core/ODESystem.h"
+
 
 namespace MML
 {
@@ -14,21 +13,21 @@ namespace MML
 	{
 		int  _numStepsOK, _numStepsBad;
 
-	public:
 		int  _sys_dim;
 		int  _totalSavedSteps;
-
+	
 		Real _t1, _t2;
 		Vector<Real> _tval;
 		Matrix<Real> _xval;
-
+	
+	public:
 		ODESystemSolution(Real x1, Real x2, int dim)
 			: _t1(x1), _t2(x2), _sys_dim(dim),
-			_numStepsOK(0), _numStepsBad(0), _totalSavedSteps(0) {
+				_numStepsOK(0), _numStepsBad(0), _totalSavedSteps(0) {
 		}
 		ODESystemSolution(Real x1, Real x2, int dim, int maxSteps)
 			: _t1(x1), _t2(x2), _sys_dim(dim),
-			_numStepsOK(0), _numStepsBad(0), _totalSavedSteps(maxSteps + 1)
+				_numStepsOK(0), _numStepsBad(0), _totalSavedSteps(maxSteps + 1)
 		{
 			_tval.Resize(maxSteps + 1);
 			_xval.Resize(dim, maxSteps + 1);
@@ -37,21 +36,24 @@ namespace MML
 		void incrementNumStepsOK()	{ _numStepsOK++; }
 		void incrementNumStepsBad() { _numStepsBad++; }
 
-		Vector<Real> getXValues() const { return _tval; }
-		Matrix<Real> getYValues() const { return _xval; }
-		Vector<Real> getYValues(int component) const 
+		int getSysDym() const { return _sys_dim; }	
+		int getNumStepsOK() const { return _numStepsOK; }
+		int getNumStepsBad() const { return _numStepsBad; }
+		int getTotalNumSteps() const { return _numStepsOK + _numStepsBad; }
+
+		Vector<Real> getTValues() const { return _tval; }
+		Matrix<Real> getXValues() const { return _xval; }
+		Vector<Real> getXValues(int component) const 
 		{ 
 			if (component >= _sys_dim)
-				throw("Index out of range in ODESystemSolution::getYValues(component)");
+				throw("Index out of range in ODESystemSolution::getXValues(component)");
 			
 			return _xval.VectorFromRow(component); 
 		}
 
-
 		void fillValues(int ind, Real x, Vector<Real>& y)
 		{
-			// TODO check if ind is in range
-			if (ind >= _totalSavedSteps)
+			if (ind < 0 || ind >= _totalSavedSteps)
 				throw("Index out of range in ODESystemSolution::fillValues");
 
 			_tval[ind] = x;
@@ -76,7 +78,7 @@ namespace MML
 			_xval = new_yval;
 		}
 
-		LinearInterpRealFunc getSolutionAsLinearInterp(int component) const
+		LinearInterpRealFunc  getSolutionAsLinearInterp(int component) const
 		{
 			Vector<Real> xsave = _tval;
 			Vector<Real> ysave = _xval.VectorFromRow(component);
@@ -89,19 +91,12 @@ namespace MML
 			Vector<Real> ysave = _xval.VectorFromRow(component);
 			return PolynomInterpRealFunc(xsave, ysave, polyOrder + 1);
 		}
-		SplineInterpRealFunc getSolutionAsSplineInterp(int component) const
+		SplineInterpRealFunc  getSolutionAsSplineInterp(int component) const
 		{
 			Vector<Real> xsave = _tval;
 			Vector<Real> ysave = _xval.VectorFromRow(component);
 			return SplineInterpRealFunc(xsave, ysave);
 		}
-
-		//template<int N>
-		//ParametricCurveInterpolated<N> getSolutionAsParametricCurve() const
-		//{
-		//	ParametricCurveInterpolated<N> curve(_tval, _xval);
-		//	return curve;
-		//}
 
 		bool Serialize(std::string fileName, std::string title) const
 		{

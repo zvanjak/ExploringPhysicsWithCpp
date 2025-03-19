@@ -69,6 +69,7 @@ namespace MML
 		}
 	};
 
+	////////////////////////             LINEAR INTERPOLATION						  ///////////////////////
 	class LinearInterpRealFunc : public RealFunctionInterpolated
 	{
 	public:
@@ -83,6 +84,7 @@ namespace MML
 		}
 	};
 
+	////////////////////////           POLYNOMIAL INTERPOLATION						///////////////////////
 	// Polynomial interpolation object.Construct with x and y vectors, and the number M of points
 	// to be used locally(polynomial order plus one), then call interp for interpolated values.
 	class PolynomInterpRealFunc : public RealFunctionInterpolated
@@ -147,7 +149,8 @@ namespace MML
 		}
 	};
 
-	// Cubic spline interpolation object. Construct with x and y vectors, and (optionally) values of
+	///////////////////////           CUBIC SPLINE INTERPOLATION						//////////////////////
+	// Construct with x and y vectors, and (optionally) values of
 	// the first derivative at the endpoints, then call interp for interpolated values.
 	struct SplineInterpRealFunc : RealFunctionInterpolated
 	{
@@ -224,6 +227,7 @@ namespace MML
 		}
 	};
 
+	//////////////////          PARAMETRIC CURVE SPLINE INTERPOLATION						/////////////////
 	// Object for interpolating a curve specified by _numPoints points in N dimensions.
 	template<int N>
 	class SplineInterpParametricCurve : public IParametricCurve<N>

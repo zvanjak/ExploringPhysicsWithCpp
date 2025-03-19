@@ -48,13 +48,13 @@ namespace MML
 
 		Point3Cartesian operator()(Real t) const { return _point + t * _direction; }
 
-		bool IsPerpendicular(const Line3D& b) const
+		bool IsPerpendicular(const Line3D& b, Real eps = Defaults::Line3DIsPerpendicularTolerance) const
 		{
-			return ScalarProduct(Direction(), b.Direction()) == 0.0f;
+			return ScalarProduct(Direction(), b.Direction()) < eps;
 		}
-		bool IsParallel(const Line3D& b) const
+		bool IsParallel(const Line3D& b, Real eps = Defaults::Line3DIsParallelTolerance) const
 		{
-			return Direction() == b.Direction();
+			return Direction().IsEqual(b.Direction(), eps);
 		}
 
 		// distance between point and line
@@ -270,21 +270,21 @@ namespace MML
 			if (_A != 0.0)
 				outseg_x = -_D / _A;
 			else
-				outseg_x = Constants::PositiveInf;
+				outseg_x = Constants::PosInf;
 
 			if (_B != 0.0)
 				outseg_y = -_D / _B;
 			else
-				outseg_y = Constants::PositiveInf;
+				outseg_y = Constants::PosInf;
 
 			if (_C != 0.0)
 				outseg_z = -_D / _C;
 			else
-				outseg_z = Constants::PositiveInf;
+				outseg_z = Constants::PosInf;
 		}
 
 		// point to plane operations
-		bool IsPointOnPlane(const Point3Cartesian& pnt, Real defEps = 1e-15) const
+		bool IsPointOnPlane(const Point3Cartesian& pnt, Real defEps = Defaults::Plane3DIsPointOnPlaneTolerance) const
 		{
 			return std::abs(_A * pnt.X() + _B * pnt.Y() + _C * pnt.Z() + _D) < defEps;
 		}
@@ -408,9 +408,10 @@ namespace MML
 
 	class Triangle3D
 	{
-	private:
+	protected:
 		Point3Cartesian _pnt1, _pnt2, _pnt3;
 	public:
+		Triangle3D() { }
 		Triangle3D(Point3Cartesian pnt1, Point3Cartesian pnt2, Point3Cartesian pnt3)
 			: _pnt1(pnt1), _pnt2(pnt2), _pnt3(pnt3)
 		{
@@ -426,48 +427,135 @@ namespace MML
 		Point3Cartesian&	Pnt2()				{ return _pnt2; }
 		Point3Cartesian		Pnt3() const  { return _pnt3; }
 		Point3Cartesian&	Pnt3()				{ return _pnt3; }
+
+		Real Area() const
+		{
+			Real s = (A() + B() + C()) / 2.0;
+			return sqrt(s * (s - A()) * (s - B()) * (s - C()));
+		}
+		
+		bool IsRight() const
+		{
+			return (hypot(A(), B()) == C() || hypot(A(), C()) == B() || hypot(B(), C()) == A());
+		}
+		bool IsIsosceles() const		// two sides are the same length
+		{
+			return (A() == B()) || (A() == C()) || (B() == C());
+		}
+		bool IsEquilateral() const	// all sides are the same length
+		{
+			return (A() == B()) && (A() == C());
+		}
+
+		Plane3D getDefinedPlane() const
+		{
+			return Plane3D(_pnt1, _pnt2, _pnt3);
+		}
 	};
 
-	class TriangleSurface3D : public Triangle3D, IParametricSurfaceRect<3>
+	// Represents triangular surface in 3D and  defines all needed mappings 
+	// to represent Triangle3D as IParametricSurface
+	class TriangleSurface3D : public Triangle3D, IParametricSurface<3>
 	{
 	public:
 		Real _minX, _maxX, _minY, _maxY;
+		Point3Cartesian _origin;
 		Point3Cartesian _center;
 		Vector3Cartesian _localX, _localY;
+		Vector3Cartesian _normal;
+		Real _pnt3XCoord;
 
+		// pnt1-pnt2 should be hypothenuse of the triangle!!!
+		// but we will handle it, if it is not
 		TriangleSurface3D(Point3Cartesian pnt1, Point3Cartesian pnt2, Point3Cartesian pnt3)
-			: Triangle3D(pnt1, pnt2, pnt3)
 		{
-			// calculate min and max
-			_minX = std::min(pnt1.X(), std::min(pnt2.X(), pnt3.X()));
-			_maxX = std::max(pnt1.X(), std::max(pnt2.X(), pnt3.X()));
-			_minY = std::min(pnt1.Y(), std::min(pnt2.Y(), pnt3.Y()));
-			_maxY = std::max(pnt1.Y(), std::max(pnt2.Y(), pnt3.Y()));
+			// CHECK THAT 1-2 side is THE LONGEST ONE!!!
+			Real a = pnt1.Dist(pnt2);
+			Real b = pnt2.Dist(pnt3);
+			Real c = pnt3.Dist(pnt1);
 
+			if (a >= b && a >= c)
+			{
+				; // nice, we are all good
+			}
+			else if (b >= a && b >= c)
+			{
+				// rotate points one place, so that 'b' side (pnt2-pnt3) is at the beginning
+				Point3Cartesian tmp = pnt1;
+				pnt1 = pnt2;
+				pnt2 = pnt3;
+				pnt3 = tmp;
+			}
+			else
+			{
+				// rotate points two places
+				Point3Cartesian tmp = pnt1;
+				pnt1 = pnt3;
+				pnt2 = tmp;
+				pnt3 = pnt2;
+			}
+
+			_pnt1 = pnt1;		// initializing points in base Triangle3D class
+			_pnt2 = pnt2;
+			_pnt3 = pnt3;
+
+			// calculate min and max
 			// calculate center
 			_center = (pnt1 + pnt2 + pnt3) / 3.0;
 
 			// calculate local coordinate system
+			// we will take x-axis to be from pnt1 to pnt2
 			_localX = Vector3Cartesian(pnt1, pnt2).GetAsUnitVector();
-			_localY = Vector3Cartesian(pnt1, pnt3).GetAsUnitVector();
+			
+			// we will calculate y-axis as following
+			// calculate perpendicular vector to x-axis, that goes through pnt3
+			Line3D	 lineX(pnt1, pnt2);
+			Pnt3Cart pntOnLine = lineX.NearestPointOnLine(pnt3);
+
+			_localY = Vec3Cart(pntOnLine, pnt3).GetAsUnitVector();
+
+			_minX = 0.0;
+			_maxX = pnt1.Dist(pnt2);
+			_minY = 0.0;
+			_maxY = pntOnLine.Dist(pnt3);
+			_pnt3XCoord = pntOnLine.Dist(pnt1);
+
+			_normal = VectorProduct(_localX, _localY).GetAsUnitVector();
 		}
 
-		virtual Real getMinX() const { return _minX; }
-		virtual Real getMaxX() const { return _maxX; }
-		virtual Real getMinY() const { return _minY; }
-		virtual Real getMaxY() const { return _maxY; }
+		virtual Real getMinU() const { return _minX; }
+		virtual Real getMaxU() const { return _maxX; }
+		virtual Real getMinW(Real u) const { return _minY; }
+		virtual Real getMaxW(Real u) const 
+		{ 
+			// this depends on value of u (which is localX)
+			if (u < _pnt3XCoord)
+				return _minY + (u / _pnt3XCoord) * (_maxY - _minY);
+			else
+				return _minY + ((_maxX - u) / (_maxX - _pnt3XCoord)) * (_maxY - _minY);
+		}
+
+		// for a given (u,w), which is basically (x,y) in local coordinate system
+		// return point in global coordinate system
+		VectorN<Real, 3> operator()(Real u, Real w) const
+		{
+			Point3Cartesian ret = _origin + u * _localX + w * _localY;
+			return VectorN<Real, 3>({ ret.X(), ret.Y(), ret.Z() });
+		}
 	};
 
+	// represents rectangular surface in 3D
 	class RectSurface3D : public IParametricSurfaceRect<3>
 	{
 	public:
-		// predstavlja PRAVOKUTNU povrsinu u 3D
+		// all constructors are expected to set properly these values
 		Point3Cartesian _pnt1, _pnt2, _pnt3, _pnt4;
 		Real _minX, _maxX, _minY, _maxY;
 		Point3Cartesian _center;
 		Vector3Cartesian _localX, _localY;
 
 		RectSurface3D() {}
+		// MUST SET NORMAL, FOR ORIENTATION!
 		// zadati i centralnom tockom, vektorom normale, uz dodatni a i b!
 		RectSurface3D(Point3Cartesian pnt1, Point3Cartesian pnt2, Point3Cartesian pnt3, Point3Cartesian pnt4)
 			: _pnt1(pnt1), _pnt2(pnt2), _pnt3(pnt3), _pnt4(pnt4)
@@ -489,6 +577,7 @@ namespace MML
 			_localX = Vector3Cartesian(_pnt1, _pnt2).GetAsUnitVector();
 			_localY = Vector3Cartesian(_pnt1, _pnt4).GetAsUnitVector();
 		}
+		
 		virtual Real getMinU() const { return _minX; }
 		virtual Real getMaxU() const { return _maxX; }
 		virtual Real getMinW() const { return _minY; }

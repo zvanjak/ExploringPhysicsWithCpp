@@ -82,17 +82,15 @@ namespace MML
 		TensorCovarContravarNumError(std::string inMessage, int size1, int size2) : std::invalid_argument(inMessage), _numContra(size1), _numCo(size2)
 		{ }
 	};
-
-	class TensorCovarContravarAirthmeticError : public std::invalid_argument
+	class TensorCovarContravarArithmeticError : public std::invalid_argument
 	{
 	public:
 		int _numContra, _numCo;
         int _bContra, _bCo;
 
-		TensorCovarContravarAirthmeticError(std::string inMessage, int contra, int co, int b_contra, int b_co) : std::invalid_argument(inMessage), _numContra(contra), _numCo(co), _bContra(b_contra), _bCo(b_co)
+		TensorCovarContravarArithmeticError(std::string inMessage, int contra, int co, int b_contra, int b_co) : std::invalid_argument(inMessage), _numContra(contra), _numCo(co), _bContra(b_contra), _bCo(b_co)
 		{ }
 	};
-
 	class TensorIndexError : public std::invalid_argument
 	{
 	public:
