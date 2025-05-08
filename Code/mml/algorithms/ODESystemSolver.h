@@ -78,7 +78,7 @@ namespace MML
 		{
 			Real xsav, h;
 			int	i, stepNum, numSavedSteps=0, sysDim = _sys.getDim();
-			int expectedSteps = (int)((t2 - t1) / h1) + 1;
+			int expectedSteps = (int)((t2 - t1) / minSaveInterval) + 1;
 			ODESystemSolution sol(t1, t2, sysDim, expectedSteps);
 
 			_curr_t = t1;

@@ -106,12 +106,12 @@ namespace MML
 			int	i, j;
 			TridiagonalMatrix	ret(a);
 
-			for (int i = 0; i < ret._a.size(); i++)
-				ret._a[i] *= b;
+			for (int i = 0; i < ret._belowDiag.size(); i++)
+				ret._belowDiag[i] *= b;
 			for (int i = 0; i < ret._diag.size(); i++)
 				ret._diag[i] *= b;
-			for (int i = 0; i < ret._c.size(); i++)
-				ret._c[i] *= b;
+			for (int i = 0; i < ret._aboveDiag.size(); i++)
+				ret._aboveDiag[i] *= b;
 
 			return ret;
 		}
@@ -120,12 +120,12 @@ namespace MML
 			int	i, j;
 			TridiagonalMatrix	ret(b);
 
-			for (int i = 0; i < ret._a.size(); i++)
-				ret._a[i] *= a;
+			for (int i = 0; i < ret._belowDiag.size(); i++)
+				ret._belowDiag[i] *= a;
 			for (int i = 0; i < ret._diag.size(); i++)
 				ret._diag[i] *= a;
-			for (int i = 0; i < ret._c.size(); i++)
-				ret._c[i] *= a;
+			for (int i = 0; i < ret._aboveDiag.size(); i++)
+				ret._aboveDiag[i] *= a;
 
 			return ret;
 		}
@@ -134,12 +134,12 @@ namespace MML
 			int	i, j;
 			TridiagonalMatrix	ret(a);
 
-			for (int i = 0; i < ret._a.size(); i++)
-				ret._a[i] /= b;
+			for (int i = 0; i < ret._belowDiag.size(); i++)
+				ret._belowDiag[i] /= b;
 			for (int i = 0; i < ret._diag.size(); i++)
 				ret._diag[i] /= b;
-			for (int i = 0; i < ret._c.size(); i++)
-				ret._c[i] /= b;
+			for (int i = 0; i < ret._aboveDiag.size(); i++)
+				ret._aboveDiag[i] /= b;
 
 			return ret;
 		}

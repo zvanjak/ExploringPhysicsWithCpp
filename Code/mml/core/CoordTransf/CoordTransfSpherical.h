@@ -22,6 +22,8 @@ namespace MML
 		// q[0] = x
 		// q[1] = y
 		// q[2] = z
+		// THIS DOESN'T WORK :(
+		// static Real r(const Vector3Cartesian& q)		 { return sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2]); }
 		static Real r(const VectorN<Real, 3>& q)		 { return sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2]); }
 		static Real theta(const VectorN<Real, 3>& q) { return acos(q[2] / sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2])); }
 		static Real phi(const VectorN<Real, 3>& q)	 { return atan2(q[1], q[0]); }

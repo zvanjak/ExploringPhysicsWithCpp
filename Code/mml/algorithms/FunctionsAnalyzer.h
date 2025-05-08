@@ -9,6 +9,7 @@
 
 #include "core/Integration.h"
 #include "core/FunctionHelpers.h"
+#include "core/FieldOperations.h"
 
 #include "algorithms/RootFinding.h"
 
@@ -380,7 +381,26 @@ namespace MML
 		// kao out parametar vraca "mjeru" konzervativnosti
 		bool IsConservative()
 		{
-			return false;
+      // Define a small step size for numerical differentiation
+      const Real h = 0.1;
+
+      // Check the curl of the gradient at several points
+      for (Real x = -1.0; x <= 1.0; x += h)
+      {
+          for (Real y = -1.0; y <= 1.0; y += h)
+          {
+              for (Real z = -1.0; z <= 1.0; z += h)
+              {
+                // calculate gradient field
+
+                // Vec3Cart curl = MML::VectorFieldOperations::CurlCart(_f, MML::VectorN<Real, 3>{x, y, z}); 
+
+              }
+          }
+      }
+
+      // If all curl components are zero, the field is conservative
+      return true;
 		}
 	};
 

@@ -21,7 +21,7 @@ namespace MML
 			for (int i = 0; i < N; ++i)
 				_val[i] = init_val;
 		}
-		explicit VectorN(std::initializer_list<Type> list)
+		VectorN(std::initializer_list<Type> list)
 		{
 			int count = 0;
 			for (auto element : list)
@@ -33,7 +33,7 @@ namespace MML
 					break;
 			}
 		}
-		explicit VectorN(std::vector<Type> list)
+		VectorN(std::vector<Type> list)
 		{
 			int count{ 0 };
 			for (auto element : list)

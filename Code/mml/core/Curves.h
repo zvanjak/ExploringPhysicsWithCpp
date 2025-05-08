@@ -17,7 +17,7 @@ namespace MML
 	namespace Curves
 	{
 		/////////////////////////////              CARTESIAN PLANAR CURVES                  ///////////////////////////////
-		// abstract class, providing basic curve formulas in 2D
+		// abstract class, providing basic Cartesian curves formulas in 2D
 		class ICurveCartesian2D : public IParametricCurve<2>
 		{
 		public:
@@ -61,6 +61,9 @@ namespace MML
 			Real _lambda, _c;
 		public:
 			LogSpiralCurve() : _lambda(-1), _c(1) {}
+			LogSpiralCurve(Real lambda) : _lambda(lambda), _c(1) {
+				if (lambda >= 0) throw std::invalid_argument("LogSpiralCurve: lambda must be negative.");
+			}
 			LogSpiralCurve(Real lambda, Real c) : _lambda(lambda), _c(c) {
 				if (lambda >= 0) throw std::invalid_argument("LogSpiralCurve: lambda must be negative.");
 				if (c == 0) throw std::invalid_argument("LogSpiralCurve: c must not be zero.");
@@ -69,7 +72,7 @@ namespace MML
 			Real getMinT() const { return Constants::NegInf; }
 			Real getMaxT() const { return Constants::PosInf; }
 
-			VectorN<Real, 2> operator()(Real t) const { return MML::VectorN<Real, 2>{exp(_lambda* t)* cos(t), exp(_lambda* t)* sin(t)}; }
+			VectorN<Real, 2> operator()(Real t) const { return MML::VectorN<Real, 2>{exp(_lambda * t)* cos(t), exp(_lambda * t)* sin(t)}; }
 		};
 
 		class LemniscateCurve : public ICurveCartesian2D
@@ -134,6 +137,47 @@ namespace MML
 			Real getMaxT() const { return Constants::PosInf; }
 
 			VectorN<Real, 2> operator()(Real t) const { return MML::VectorN<Real, 2>{_a* t* cos(t), _a* t* sin(t)}; }
+		};
+
+
+		/////////////////////////////               POLAR PLANAR CURVES                  ///////////////////////////////
+		// abstract class, providing basic polar curves formulas in 2D
+		// QUESTION - does it returns polar coords???
+		class ICurvePolar2D : public IParametricCurve<2>
+		{
+		public:
+			Vec2Cart getTangent(Real t)
+			{
+				return Derivation::DeriveCurve<2>(*this, t, nullptr);
+			}
+			Vec2Cart getTangentUnit(Real t)
+			{
+				return getTangent(t).GetAsUnitVector();
+			}
+			Vec2Cart getNormal(Real t)
+			{
+				return Derivation::DeriveCurveSec<2>(*this, t, nullptr);
+			}
+			Vec2Cart getNormalUnit(Real t)
+			{
+				return getNormal(t).GetAsUnitVector();
+			}
+		};
+
+		class Circle2DCurvePolar : public ICurvePolar2D
+		{
+			Real _radius;
+			Pnt2Cart _center;
+
+		public:
+			Circle2DCurvePolar() : _radius(1), _center(0, 0) {}
+			Circle2DCurvePolar(Real radius) : _radius(radius), _center(0, 0) {}
+			Circle2DCurvePolar(Real radius, const Pnt2Cart& center) : _radius(radius), _center(center) {}
+			
+			Real getMinT() const { return 0.0; }
+			Real getMaxT() const { return 2 * Constants::PI; }
+			
+			VectorN<Real, 2> operator()(Real t) const { return MML::VectorN<Real, 2>{_radius, t}; }
 		};
 
 		///////////////////////////////             CARTESIAN SPACE CURVES                  ///////////////////////////////

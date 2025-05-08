@@ -20,11 +20,14 @@
 #include <complex>
 #include <numbers>
 
+#include <random>
+
 #include "MMLExceptions.h"
 
 // defines for different platforms
 #ifdef __APPLE__
 #  include <TargetConditionals.h>
+#include <random>
 #  if (defined(TARGET_OS_OSX) && TARGET_OS_OSX == 1) || (defined(TARGET_OS_MAC) && TARGET_OS_MAC == 1)
 #    define MML_PLATFORM_MAC
 #  elif (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE == 1)
@@ -60,21 +63,31 @@ typedef std::complex<Real> Complex;   // default complex type
 namespace MML
 {
 	// Global paths for Visualizers
-	static const std::string MML_GLOBAL_PATH = "E:/Projects/MinimalMathLibrary";
-	//static const std::string MML_GLOBAL_PATH = "/usr/zvanjak/projects/MinimalMathLibrary";
+	static const std::string MML_GLOBAL_PATH = "E:/Projects/ExploringPhysicsWithCpp";
+	//static const std::string MML_GLOBAL_PATH = "/usr/zvanjak/projects/ExploringPhysicsWithCpp";
 
-	static const std::string MML_PATH_ResultFiles = MML_GLOBAL_PATH + 
-							"/results/";
+	static const std::string MML_PATH_ResultFiles = MML_GLOBAL_PATH + "/results/";
+	
 	static const std::string MML_PATH_RealFuncViz = MML_GLOBAL_PATH + 
 							"/tools/visualizers/real_function_visualizer/MML_RealFunctionVisualizer.exe";
+	
 	static const std::string MML_PATH_SurfaceViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/scalar_function_2d_visualizer/MML_ScalarFunction2Visualizer.exe";
+							"/tools/visualizers/scalar_function_2d_visualizer/MML_ScalarFunction2D_Visualizer.exe";
+	
 	static const std::string MML_PATH_ParametricCurve2DViz = MML_GLOBAL_PATH + 
 							"/tools/visualizers/parametric_curve_2d_visualizer/MML_ParametricCurve2D_Visualizer.exe";
-	static const std::string MML_PATH_ParametricCurveViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/parametric_curve_visualizer/MML_ParametricCurveVisualizer.exe";
-	static const std::string MML_PATH_VectorFieldViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/vector_field_visualizer/MML_VectorFieldVisualizer.exe";
+	static const std::string MML_PATH_ParametricCurve3DViz = MML_GLOBAL_PATH + 
+							"/tools/visualizers/parametric_curve_3d_visualizer/MML_ParametricCurve3D_Visualizer.exe";
+	
+	static const std::string MML_PATH_VectorField2DViz = MML_GLOBAL_PATH +
+							"/tools/visualizers/vector_field_2d_visualizer/MML_VectorField2D_Visualizer.exe";
+	static const std::string MML_PATH_VectorField3DViz = MML_GLOBAL_PATH +
+							"/tools/visualizers/vector_field_3d_visualizer/MML_VectorField3D_Visualizer.exe";
+
+	static const std::string MML_PATH_Particle2DViz = MML_GLOBAL_PATH +
+							"/tools/visualizers/particle_2d_visualizer/MML_ParticleVisualizer2D.exe";
+	static const std::string MML_PATH_Particle3DViz = MML_GLOBAL_PATH +
+							"/tools/visualizers/particle_3d_visualizer/MML_ParticleVisualizer3D.exe";
 
 	template<class Type>
 	static Real Abs(const Type& a)
@@ -100,6 +113,24 @@ namespace MML
 	template<class T> inline T POW3(const T& a) { const T& t = a; return t * t * t; }
 	template<class T> inline T POW4(const T& a) { const T& t = a; return t * t * t * t; }
 
+	class Random
+	{
+	public:
+		static Real UniformReal(Real min, Real max)
+		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<Real> dis(min, max);
+			return dis(gen);
+		}
+		static int UniformInt(int min, int max)
+		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<int> dis(min, max);
+			return dis(gen);
+		}
+	};
 	////////////                  Constants                ////////////////
 	namespace Constants
 	{

@@ -126,8 +126,12 @@ namespace MML
 				for (int j = 0; j < _cols; ++j)
 					_data[i][j] = m._data[ind_row + i][ind_col + j];
 		}
-		Matrix(Matrix&& m)
+		Matrix(Matrix&& m) : _data(nullptr), _rows(0), _cols(0)
 		{
+			if (m._data == nullptr)
+				return; // nothing to do
+
+			// steal the data from m
 			_data = m._data;
 
 			_rows = m._rows;
@@ -243,6 +247,10 @@ namespace MML
 				throw MatrixDimensionError("Matrix::MakeUnitMatrix - must be square matrix", _rows, _cols, -1, -1);
 		}
 
+		Vector<Type> GetDiagonal() const
+		{
+			return VectorFromDiagonal();
+		}
 		Matrix GetLower(bool includeDiagonal = true) const
 		{
 			if (RowNum() != ColNum())

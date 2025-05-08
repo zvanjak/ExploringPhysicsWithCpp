@@ -163,7 +163,7 @@ namespace MML
 
 			Vector<Type> ret(ColNum());
 			for (int i = 0; i < ColNum(); i++)
-				ret[i] = this->a(rowInd, i);
+				ret[i] = (*this)(rowInd, i);
 
 			return ret;
 		}
@@ -174,7 +174,7 @@ namespace MML
 
 			Vector<Type> ret(RowNum());
 			for (int i = 0; i < RowNum(); i++)
-				ret[i] = this->a(i, colInd);
+				ret[i] = (*this)(i, colInd);
 
 			return ret;
 		}
@@ -185,7 +185,7 @@ namespace MML
 
 			Vector<Type> ret(RowNum());
 			for (int i = 0; i < RowNum(); i++)
-				ret[i] = this->a(i, i);
+				ret[i] = (*this)(i, i);
 
 			return ret;
 		}

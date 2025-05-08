@@ -15,7 +15,7 @@ namespace MML
 	{
 	public:
 		// solving with Matrix RHS (ie. solving simultaneously for multiple RHS)
-		static bool Solve(Matrix<Type>& a, Matrix<Type>& b)
+		static bool SolveInPlace(Matrix<Type>& a, Matrix<Type>& b)
 		{
 			int i, icol, irow, j, k, l, ll;
 			Real big;
@@ -72,26 +72,52 @@ namespace MML
 		}
 		
 		// solving for a given RHS vector
-		static bool Solve(Matrix<Type>& a, Vector<Type>& b)
+		static bool SolveInPlace(Matrix<Type>& a, Vector<Type>& b)
 		{
 			auto bmat = Utils::ColumnMatrixFromVector(b);
 
-			bool ret = Solve(a, bmat);
+			bool ret = SolveInPlace(a, bmat);
 			b = bmat.VectorFromColumn(0);
 			return ret;
 		}
 
 		// solving for a given RHS vector, but with return value
 		// (in case of singular matrix 'a', exception is thrown)
-		static Vector<Type> SolveConst(Matrix<Type>& a, const Vector<Type>& b)
+		static Vector<Type> Solve(Matrix<Type>& a, const Vector<Type>& b)
 		{
-			Vector<Type> ret(b.size());
 			Matrix<Type> bmat = Utils::ColumnMatrixFromVector(b);
-			bool success = Solve(a, bmat);
+
+			bool success = SolveInPlace(a, bmat);
+			
 			if (!success)
 				throw SingularMatrixError("GaussJordanSolver::Solve - Singular Matrix");
-			ret = bmat.VectorFromColumn(0);
-			return ret;
+			
+			return bmat.VectorFromColumn(0);
+		}
+
+		// solving for a given RHS vector, but with return value
+		// both matrix and vector are const and are not changed
+		// (in case of singular matrix 'a', exception is thrown)
+		static Vector<Type> SolveConst(const Matrix<Type>& a, const Vector<Type>& b)
+		{
+			if (a.RowNum() != a.ColNum())
+				throw MatrixDimensionError("GaussJordanSolver::SolveConst - matrix must be square", a.RowNum(), a.ColNum(), -1, -1);
+			if (a.RowNum() != b.size())
+				throw MatrixDimensionError("GaussJordanSolver::SolveConst - matrix and vector must have same size", a.RowNum(), a.ColNum(), b.size(), -1);
+			if (b.size() == 0)
+				throw MatrixDimensionError("GaussJordanSolver::SolveConst - vector must be non-empty", a.RowNum(), a.ColNum(), b.size(), -1);
+			if (a.RowNum() == 0 || a.ColNum() == 0 )
+				throw MatrixDimensionError("GaussJordanSolver::SolveConst - matrix must be non-empty", a.RowNum(), a.ColNum(), -1, -1);
+
+			Matrix<Real> mat(a);
+			Matrix<Type> bmat = Utils::ColumnMatrixFromVector(b);
+
+			bool success = SolveInPlace(mat, bmat);
+
+			if (!success)
+				throw SingularMatrixError("GaussJordanSolver::SolveConst - Singular Matrix");
+
+			return bmat.VectorFromColumn(0);
 		}
 	};
 }

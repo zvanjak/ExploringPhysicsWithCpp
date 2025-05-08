@@ -36,9 +36,9 @@ public:
 	void derivs(const Real t, const MML::Vector<Real>& x, MML::Vector<Real>& dxdt) const override
 	{
 		Real tht = x[0];
-		Real w1  = x[1];
+		Real w1 = x[1];
 		Real phi = x[2];
-		Real w2  = x[3];
+		Real w2 = x[3];
 
 		Real g = 9.81;
 
@@ -50,48 +50,119 @@ public:
 };
 
 
+class SphericalPendulumHamiltonODE : public IODESystem
+{
+	Real _m, _l;
+public:
+	SphericalPendulumHamiltonODE() : _l(1.0), _m(1.0) {}
+	SphericalPendulumHamiltonODE(Real l) : _l(l), _m(1.0) {}
+	SphericalPendulumHamiltonODE(Real m, Real l) : _m(m), _l(l) {}
+
+	int  getDim() const override { return 4; }
+	void derivs(const Real t, const MML::Vector<Real>& x, MML::Vector<Real>& dxdt) const override
+	{
+		Real tht = x[0];
+		Real phi = x[1];
+		Real P_tht = x[2];
+		Real P_phi = x[3];
+
+		Real g = 9.81;
+
+		dxdt[0] = P_tht / (_m * POW2(_l));
+		dxdt[1] = P_phi / (_m * POW2(_l * sin(tht)));
+		dxdt[2] = POW2(P_phi) * cos(tht) / (_m * POW2(_l) * POW3(sin(tht))) - _m * g * _l * sin(tht);
+		dxdt[3] = 0.0;
+	}
+};
+
 void Demo_SphericalPendulum()
 {
 	Real	l = 1.0;
-	SphericalPendulumODE		odeSysSpherPend = SphericalPendulumODE(l);
+	//SphericalPendulumODE		odeSysSpherPend = SphericalPendulumODE(l);
+	SphericalPendulumHamiltonODE		odeSysSpherPend = SphericalPendulumHamiltonODE(l);
 
-	Real	t1 = 0.0, t2 = 5.0;
-	int   expectNumSteps = 100;
+	Real	t1 = 0.0, t2 = 20.0;
+	int   expectNumSteps = 2000;
 	Real	minSaveInterval = (t2 - t1) / expectNumSteps;
-	Real	initAngleTheta = 0.5;
-	Real  initAnglePhi = 0.1;
-	Vector<Real>	initCond{ initAngleTheta, 0.0, initAnglePhi, 0.05 };
 
-	ODESystemSolver<RK5_CashKarp_Stepper> adaptSolver(odeSysSpherPend);
-	ODESystemSolution solAdapt = adaptSolver.integrate(initCond, t1, t2, minSaveInterval / 1.21, 1e-06, 0.01);
+	Real	initAngleTheta = Constants::PI / 2;
+	Real  initAnglePhi = 0.0;
+	Vector<Real>	initCond{ initAngleTheta, initAnglePhi, 5.10, -3.55 };
 
-	Vector<Real> t_vals  = solAdapt.getTValues();
-	Vector<Real> theta_vals = solAdapt.getXValues(0);
-	Vector<Real> theta_dot_vals = solAdapt.getXValues(1);
-	Vector<Real> phi_vals = solAdapt.getXValues(2);
-	Vector<Real> phi_dot_vals = solAdapt.getXValues(3);
+	ODESystemSolver<RK5_CashKarp_Stepper> odeSolver(odeSysSpherPend);
+	ODESystemSolution odeSol = odeSolver.integrate(initCond, t1, t2, minSaveInterval, 1e-08, 0.01);
+
+	Vector<Real> t_vals = odeSol.getTValues();
+	Vector<Real> theta_vals = odeSol.getXValues(0);
+	Vector<Real> phi_vals = odeSol.getXValues(1);
+	Vector<Real> theta_dot_vals = odeSol.getXValues(2);
+	Vector<Real> phi_dot_vals = odeSol.getXValues(3);
 
 	std::cout << "\n\n****  Runge-Kutta 4th order - fixed stepsize  **********  Runge-Kutta 4th order - adaptive stepper  ****\n";
 	std::vector<ColDesc>				vecNames{ ColDesc("t", 11, 2, 'F'), ColDesc("theta", 15, 8, 'F'), ColDesc("theta dot", 15, 8, 'F'),
 																				ColDesc("phi", 12, 8, 'F'), ColDesc("phi dot", 12, 8, 'F') };
-	std::vector<Vector<Real>*>	vecVals{ &t_vals, &theta_vals, &theta_dot_vals, &phi_vals, &phi_dot_vals  };
+	std::vector<Vector<Real>*>	vecVals{ &t_vals, &theta_vals, &theta_dot_vals, &phi_vals, &phi_dot_vals };
 	VerticalVectorPrinter	vvp(vecNames, vecVals);
 
-	vvp.Print();
+	//vvp.Print();
 
 	// getting solutions as polynomials
-	PolynomInterpRealFunc 	solAdaptPolyInterp0 = solAdapt.getSolutionAsPolyInterp(0, 3);
-	PolynomInterpRealFunc 	solAdaptPolyInterp1 = solAdapt.getSolutionAsPolyInterp(2, 3);
-
-	SplineInterpRealFunc		solSplineInterp0 = solAdapt.getSolutionAsSplineInterp(0);
-	SplineInterpParametricCurve<2> spline(solAdapt.getXValues());
+	PolynomInterpRealFunc 	solAdaptPolyInterp0 = odeSol.getSolutionAsPolyInterp(0, 3);
+	PolynomInterpRealFunc 	solAdaptPolyInterp1 = odeSol.getSolutionAsPolyInterp(1, 3);
 
 	Visualizer::VisualizeRealFunction(solAdaptPolyInterp0, "Spherical pendulum - theta in time",
-		t1, t2, 200, "spherical_pendulum_theta.txt");
+		t1, t2, 1000, "spherical_pendulum_theta.txt");
 
 	// shown together
 	Visualizer::VisualizeMultiRealFunction({ &solAdaptPolyInterp0, &solAdaptPolyInterp1 },
-		"Spherical pendulum - both angles", t1, t2, 200,
+		"Spherical pendulum - both angles", { "Theta", "Phi" },
+		t1, t2, 1000,
 		"spherical_pendulum_multi_real_func.txt");
 
+	// projecting pendulum path on x-y, x-z and y-z plane
+	// first, get values for x, y, z coordinates in vectors
+	Vector<Real> x_vals(t_vals.size()), y_vals(t_vals.size()), z_vals(t_vals.size());
+
+	for (int i = 0; i < t_vals.size(); i++)
+	{
+		x_vals[i] = l * sin(theta_vals[i]) * cos(phi_vals[i]);
+		y_vals[i] = l * sin(theta_vals[i]) * sin(phi_vals[i]);
+		z_vals[i] = l * (1 - cos(theta_vals[i]));
+	}
+
+	// then form appropriate matrices with relevant data for visualization of parametric curves
+	Matrix<Real> curve_x_y_points(t_vals.size(), 2), curve_x_z_points(t_vals.size(), 2);
+	Matrix<Real> curve_y_z_points(t_vals.size(), 2);
+	Matrix<Real> curve_xyz_points(t_vals.size(), 3);
+	for (int i = 0; i < t_vals.size(); i++)
+	{
+		curve_xyz_points(i, 0) = 100 * x_vals[i];
+		curve_xyz_points(i, 1) = 100 * y_vals[i];
+		curve_xyz_points(i, 2) = 100 * z_vals[i];
+
+		curve_x_y_points(i, 0) = x_vals[i];
+		curve_x_y_points(i, 1) = y_vals[i];
+
+		curve_x_z_points(i, 0) = x_vals[i];
+		curve_x_z_points(i, 1) = z_vals[i];
+
+		curve_y_z_points(i, 0) = y_vals[i];
+		curve_y_z_points(i, 1) = z_vals[i];
+	}
+
+	SplineInterpParametricCurve<3> xyzTrajectory(0.0, 1.0, curve_xyz_points);
+	Visualizer::VisualizeParamCurve3D(xyzTrajectory, "Spherical pendulum : x-y-z trajectory",
+		0.0, 1.0, t_vals.size(), "spherical_pendulum_xyz_trajectory.txt");
+
+	SplineInterpParametricCurve<2> xyTrajectory(0.0, 1.0, curve_x_y_points);
+	Visualizer::VisualizeParamCurve2D(xyTrajectory, "Spherical pendulum : x-y trajectory",
+		0.0, 1.0, t_vals.size(), "spherical_pendulum_xy_trajectory.txt");
+
+	SplineInterpParametricCurve<2> xzTrajectory(0.0, 1.0, curve_x_z_points);
+	Visualizer::VisualizeParamCurve2D(xzTrajectory, "Spherical pendulum : x-z trajectory",
+		0.0, 1.0, t_vals.size(), "spherical_pendulum_xz_trajectory.txt");
+
+	SplineInterpParametricCurve<2> yzTrajectory(0.0, 1.0, curve_y_z_points);
+	Visualizer::VisualizeParamCurve2D(yzTrajectory, "Spherical pendulum : y-z trajectory",
+		0.0, 1.0, t_vals.size(), "spherical_pendulum_yz_trajectory.txt");
 }

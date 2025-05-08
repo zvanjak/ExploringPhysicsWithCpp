@@ -14,6 +14,9 @@ namespace MML
 		{
 			Real outAvg = 0.0;
 			int n = data.size();
+			
+			if (n <= 0)
+				throw StatisticsError("Vector size must be greater than 0 in Avg");
 
 			for (int j = 0; j < n; j++)
 				outAvg += data[j];
@@ -27,10 +30,10 @@ namespace MML
 			Real s, ep;
 			int j, n = data.size();
 
-			outAvg = 0.0;
-			for (j = 0; j < n; j++)
-				outAvg += data[j];
-			outAvg /= n;
+			if (n <= 0)
+				throw StatisticsError("Vector size must be greater than 0 in AvgVar");
+
+			outAvg = Avg(data);
 
 			outVar = ep = 0.0;
 			for (j = 0; j < n; j++) {
@@ -47,7 +50,7 @@ namespace MML
 			Real ep = 0.0, s, p;
 
 			if (n <= 1)
-				throw("_numPoints must be at least 2 in moment");
+				throw StatisticsError("Vector size must be greater than 1 in Moments");
 
 			s = 0.0;
 			for (j = 0; j < n; j++)
@@ -71,7 +74,7 @@ namespace MML
 				curt = curt / (n * var * var) - 3.0;
 			}
 			else
-				throw("No skew/kurtosis when variance = 0 (in moment)");
+				throw("No skew/kurtosis when variance = 0 (in Moments)");
 		}
 	};
 }

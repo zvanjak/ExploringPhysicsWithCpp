@@ -301,6 +301,28 @@ namespace MML
 
 		Vector4Lorentz() : VectorN<Real, 4>{ 0.0, 0.0, 0.0, 0.0 } {}
 		Vector4Lorentz(std::initializer_list<Real> list) : VectorN<Real, 4>(list) { }
+
+		friend Real ScalarProduct(const Vector4Lorentz& a, const Vector4Lorentz& b)
+		{
+			return a.T() * b.T() - a.X() * b.X() - a.Y() * b.Y() - a.Z() * b.Z();
+		}
+
+		Real Norm() const
+		{
+			return sqrt(T() * T() - X() * X() - Y() * Y() - Z() * Z());
+		}
+		bool isTimelike() const
+		{
+			return (T() * T() - X() * X() - Y() * Y() - Z() * Z()) > 0;
+		}
+		bool isSpacelike() const
+		{
+			return (T() * T() - X() * X() - Y() * Y() - Z() * Z()) < 0;
+		}
+		bool isLightlike() const
+		{
+			return (T() * T() - X() * X() - Y() * Y() - Z() * Z()) == 0;
+		}
 	};
 
 	typedef Vector2Cartesian    Vec2Cart;

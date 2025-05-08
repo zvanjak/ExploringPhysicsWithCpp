@@ -11,6 +11,10 @@ void Demo_VectorN();
 
 int main()
 {
+	std::cout << "***********************************************************************" << std::endl;
+	std::cout << "****                      EXAMPLE 1 - Basic objects                ****" << std::endl;
+	std::cout << "***********************************************************************" << std::endl;
+
 	Demo_BaseUtils();
 	Demo_Geometry();
 	Demo_Geometry_2D();

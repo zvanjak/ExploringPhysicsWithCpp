@@ -296,9 +296,7 @@ namespace MML
 		}
 
 		SplineInterpParametricCurve(const Matrix<Real>& ptsin, bool close = 0)
-			: _numPoints(ptsin.RowNum()), _dim(ptsin.ColNum()), _bemba(close ? 2 * _numPoints : _numPoints),
-			_isCurveClosed(close), _curvePoints(_dim, _bemba), s(_bemba), ans(_dim), srp(_dim),
-			_minT(0.), _maxT(1.)	{	}
+			: SplineInterpParametricCurve(0.0, 1.0, ptsin, close) {	}
 
 		~SplineInterpParametricCurve() {
 			for (int j = 0; j < _dim; j++) 
@@ -320,6 +318,9 @@ namespace MML
 
 			if (_isCurveClosed)
 				t = t - floor(t);
+
+			// we have to map t from [minT, maxT] to [0, 1]
+			t = (t - _minT) / (_maxT - _minT);
 			for (int j = 0; j < _dim; j++)
 				ans[j] = (*srp[j])(t);
 

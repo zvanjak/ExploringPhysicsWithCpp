@@ -78,11 +78,13 @@ namespace MML
 		}
 
 		///////////////////                     Vector helpers                    ///////////////////
-		static bool AreEqual(const Vector<Real> &a, const Vector<Real> &b, Real eps = Defaults::VectorIsEqualTolerance)
+		static bool AreEqual(const Vector<Real> &a, const Vector<Real> &b, 
+												 Real eps = Defaults::VectorIsEqualTolerance)
 		{
 			return a.IsEqualTo(b, eps);
 		}
-		static bool AreEqual(const Vector<Complex>& a, const Vector<Complex>& b, double eps = Defaults::ComplexAreEqualTolerance)
+		static bool AreEqual(const Vector<Complex>& a, const Vector<Complex>& b, 
+												 Real eps = Defaults::ComplexAreEqualTolerance)
 		{
 			if (a.size() != b.size())
 				return false;
@@ -93,7 +95,8 @@ namespace MML
 
 			return true;
 		}
-		static bool AreEqualAbs(const Vector<Complex>& a, const Vector<Complex>& b, double eps = Defaults::ComplexAreEqualAbsTolerance)
+		static bool AreEqualAbs(const Vector<Complex>& a, const Vector<Complex>& b, 
+														Real eps = Defaults::ComplexAreEqualAbsTolerance)
 		{
 			if (a.size() != b.size())
 				return false;
@@ -127,8 +130,25 @@ namespace MML
 
 			return ret;
 		}
+		static Real		 VectorsAngle(const Vector<Real>& a, const Vector<Real>& b)
+		{
+			if (a.size() != b.size())
+				throw VectorDimensionError("Vector::AngleToVector - vectors must be equal size", a.size(), b.size());
 
-		template<int N> 
+			Real cosAngle = ScalarProduct(a, b) / (a.NormL2() * b.NormL2());
+			return std::acos(cosAngle);
+		}
+
+		static Vector<Real> VectorProjectionParallelTo(const Vector<Real>& orig, const Vector<Real>& b)
+		{
+			return ScalarProduct(orig, b) / b.NormL2() * b;
+		}
+		static Vector<Real> VectorProjectionPerpendicularTo(const Vector<Real>& orig, const Vector<Real>& b)
+		{
+			return orig - VectorProjectionParallelTo(orig, b);
+		}
+
+		template<int N>
 		static Real		 ScalarProduct(const VectorN<Real, N> &a, const VectorN<Real, N> &b)
 		{
 			Real ret = 0;
@@ -145,25 +165,8 @@ namespace MML
 			return ret;
 		}
 
-		static Vector<Real> VectorProjectionParallelTo(const Vector<Real>& orig, const Vector<Real>& b)
-		{
-			return ScalarProduct(orig, b) / b.NormL2() * b;
-		}
-		static Vector<Real> VectorProjectionPerpendicularTo(const Vector<Real>& orig, const Vector<Real>& b)
-		{
-			return orig - VectorProjectionParallelTo(orig, b);
-		}
-
-		static Real VectorsAngle(const Vector<Real> &a, const Vector<Real> &b)
-		{
-			if (a.size() != b.size())
-				throw VectorDimensionError("Vector::AngleToVector - vectors must be equal size", a.size(), b.size());
-
-			Real cosAngle = ScalarProduct(a,b) / (a.NormL2() * b.NormL2());
-			return std::acos(cosAngle);
-		}
 		template<int N> 
-		static Real VectorsAngle(const VectorN<Real, N> &a, const VectorN<Real, N> &b)
+		static Real		 VectorsAngle(const VectorN<Real, N> &a, const VectorN<Real, N> &b)
 		{
 			Real cosAngle = ScalarProduct(a, b) / (a.NormL2() * b.NormL2());
 			return std::acos(cosAngle);
@@ -278,6 +281,24 @@ namespace MML
 			for (int i = 0; i < b.size(); i++)
 				ret[i][i] = b[i];
 
+			return ret;
+		}
+
+		// create Row matrix from std::vector list of Vectors
+		template<class Type> static Matrix<Type> MatrixFromVectorsInRows(const std::vector<Vector<Type>>& b)
+		{
+			Matrix<Type> ret((int)b.size(), (int)b[0].size());
+			for (int i = 0; i < b.size(); i++)
+				for (int j = 0; j < b[i].size(); j++)
+					ret[i][j] = b[i][j];
+			return ret;
+		}
+		template<class Type> static Matrix<Type> MatrixFromVectorsInColumns(const std::vector<Vector<Type>>& b)
+		{
+			Matrix<Type> ret((int)b[0].size(), (int)b.size());
+			for (int i = 0; i < b.size(); i++)
+				for (int j = 0; j < b[i].size(); j++)
+					ret[j][i] = b[i][j];
 			return ret;
 		}
 

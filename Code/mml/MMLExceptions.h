@@ -113,6 +113,16 @@ namespace MML
 		ODESolverError(std::string inMessage) : std::runtime_error(inMessage)
 		{ }
 	};
+
+	//////////            Statistics exceptions             ///////////
+	class StatisticsError : public std::runtime_error
+	{
+	public:
+		StatisticsError(std::string inMessage) : std::runtime_error(inMessage)
+		{
+		}
+	};
+
 }
 
 #endif // MML_EXCEPTIONS_H

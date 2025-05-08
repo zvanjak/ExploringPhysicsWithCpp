@@ -46,13 +46,13 @@ namespace MML
 		// numRoots will be set to the number of bracketing pairs found.
 		// If it is positive, the vectors xb1[0..numRoots - 1] and xb2[0..numRoots - 1] will be filled 
 		// sequentially with any bracketing pairs that are found.
-		static void FindRootBrackets(const IRealFunction& func, const Real x1, const Real x2, const int numPoints, 
-																 Vector<Real>& xb1, Vector<Real>& xb2, int& numRoots)
+		static int FindRootBrackets(const IRealFunction& func, const Real x1, const Real x2, const int numPoints, 
+																 Vector<Real>& xb1, Vector<Real>& xb2)
 		{
 			int numBrackets = 20;
 			xb1.Resize(numBrackets);
 			xb2.Resize(numBrackets);
-			numRoots = 0;
+			int numRoots = 0;
 			Real dx = (x2 - x1) / numPoints;
 			Real x = x1;
 			Real fp = func(x1);
@@ -75,6 +75,7 @@ namespace MML
 				}
 				fp = fc;
 			}
+			return numRoots;
 		}
 
 		// Using bisection, return the root of a function 'func' known to lie between x1 and x2.
