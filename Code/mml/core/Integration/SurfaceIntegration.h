@@ -28,11 +28,11 @@ namespace MML
 		{
 			return 0.0;
 		}
-		static Real SurfaceIntegral(const IVectorFunction<3>& vectorField, const SolidSurfaces3D& solid)
+		static Real SurfaceIntegral(const IVectorFunction<3>& vectorField, const BodyWithRectSurfaces& solid)
 		{
 			Real total = 0.0;
-			for (int i = 0; i < solid._surfaces.size(); i++)
-				total += SurfaceIntegral(vectorField, solid._surfaces[i]);
+			for (int i = 0; i < solid.getSurfaceCount(); i++)
+				total += SurfaceIntegral(vectorField, solid.getSurface(i));
 
 			return total;
 		}

@@ -1,5 +1,5 @@
-#if !defined MML_DATA_CONTAINERS_H
-#define MML_DATA_CONTAINERS_H
+#if !defined MML_CONSOLE_PRINTER_H
+#define MML_CONSOLE_PRINTER_H
 
 #include "MMLBase.h"
 
@@ -28,7 +28,7 @@ namespace MML
 
 	public:
 		VerticalVectorPrinter() : _maxVecLen(0) {}
-		VerticalVectorPrinter(std::vector<Vector<Real>*> vecs) : listVec(vecs) 
+		VerticalVectorPrinter(std::vector<Vector<Real>*> vecs) : listVec(vecs)
 		{
 			// calculate maximum length for these vectors
 			_maxVecLen = 0;

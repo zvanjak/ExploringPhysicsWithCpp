@@ -26,9 +26,17 @@ namespace MML
 		bool	operator!=(const Point2Cartesian& b) const { return (X() != b.X()) || (Y() != b.Y()); }
 		bool  IsEqual(const Point2Cartesian& b, Real eps = Defaults::Pnt2CartIsEqualTolerance) const { return Dist(b) < eps; }
 
-		Point2Cartesian operator+(const Point2Cartesian& b) const { return Point2Cartesian(X() + b.X(), Y() + b.Y()); }
-		Point2Cartesian operator*(Real b) const { return Point2Cartesian(X() * b, Y() * b); }
-		Point2Cartesian operator/(Real b) const { return Point2Cartesian(X() / b, Y() / b); }
+		Point2Cartesian  operator+(const Point2Cartesian& b) const { return Point2Cartesian(X() + b.X(), Y() + b.Y()); }
+		Point2Cartesian& operator+=(const Point2Cartesian& b)	{	_x += b.X(); _y += b.Y(); return *this;	}
+
+		Point2Cartesian  operator-(const Point2Cartesian& b) const { return Point2Cartesian(X() - b.X(), Y() - b.Y()); }
+		Point2Cartesian& operator-=(const Point2Cartesian& b) { _x -= b.X(); _y -= b.Y(); return *this; }
+
+		Point2Cartesian  operator*(Real b) const { return Point2Cartesian(X() * b, Y() * b); }
+		Point2Cartesian& operator*=(Real b) { _x *= b; _y *= b; return *this; }
+
+		Point2Cartesian	 operator/(Real b) const { return Point2Cartesian(X() / b, Y() / b); }
+		Point2Cartesian& operator/=(Real b) { _x /= b; _y /= b; return *this; }
 
 		friend Point2Cartesian operator*(Real a, const Point2Cartesian& b) { return Point2Cartesian(a * b.X(), a * b.Y()); }
 	};	
@@ -87,8 +95,16 @@ namespace MML
 		bool  IsEqual(const Point3Cartesian& b, Real eps = Defaults::Pnt3CartIsEqualTolerance) const { return Dist(b) < eps; }
 
 		Point3Cartesian operator+(const Point3Cartesian& b) const { return Point3Cartesian(X() + b.X(), Y() + b.Y(), Z() + b.Z()); }
+		Point3Cartesian& operator+=(const Point3Cartesian& b) { _x += b.X(); _y += b.Y(); _z += b.Z(); return *this; }
+
+		Point3Cartesian operator-(const Point3Cartesian& b) const { return Point3Cartesian(X() - b.X(), Y() - b.Y(), Z() - b.Z()); }
+		Point3Cartesian& operator-=(const Point3Cartesian& b) { _x -= b.X(); _y -= b.Y(); _z -= b.Z(); return *this; }
+
 		Point3Cartesian operator*(Real b) const { return Point3Cartesian(X() * b, Y() * b, Z() * b); }
+		Point3Cartesian& operator*=(Real b) { _x *= b; _y *= b; _z *= b; return *this; }
+
 		Point3Cartesian operator/(Real b) const { return Point3Cartesian(X() / b, Y() / b, Z() / b); }
+		Point3Cartesian& operator/=(Real b) { _x /= b; _y /= b; _z /= b; return *this; }
 
 		friend Point3Cartesian operator*(Real a, const Point3Cartesian& b) { return Point3Cartesian(a * b.X(), a * b.Y(), a * b.Z()); }
 	};

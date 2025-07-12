@@ -7,7 +7,7 @@ void Demo_Geometry_3D();
 void Demo_Matrix();
 void Demo_MatrixNM();
 void Demo_Vector();
-void Demo_VectorN();
+//void Demo_VectorN();
 
 int main()
 {
@@ -22,7 +22,7 @@ int main()
 	Demo_Matrix();
 	Demo_MatrixNM();
 	Demo_Vector();
-	Demo_VectorN();
+	//Demo_VectorN();
 
   return 0;
 }

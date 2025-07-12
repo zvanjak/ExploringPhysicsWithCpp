@@ -77,6 +77,9 @@ namespace MML
 						: RealFunctionInterpolated(xv, yv, 2) {}
 
 		Real calcInterpValue(int j, Real x) const {
+			if( x < MinX() || x > MaxX() )
+				return 0.0;
+
 			if (X(j) == X(j + 1)) 
 				return Y(j);
 			else 
@@ -123,7 +126,7 @@ namespace MML
 			{
 				for (i = 0; i < getInterpOrder() - m; i++) 
 				{
-					// we loop over the current c’s and d’s and update
+					// we loop over the current c's and d's and update
 					ho = X(startInd + i) - x;
 					hp = X(startInd + i + m) - x;
 					w = c[i + 1] - d[i];
@@ -136,12 +139,7 @@ namespace MML
 					c[i] = ho * den;
 				}
 				dy = (2 * (ns + 1) < (getInterpOrder() - m) ? c[ns + 1] : d[ns--]);
-				// After each column in the tableau is completed, we decide which correction, c or d, we
-				//	want to add to our accumulating value of y, i.e., which path to take through the tableau
-				//	— forking up or down.We do this in such a way as to take the most “straight line”
-				//	route through the tableau to its apex, updating ns accordingly to keep track of where
-				//	we are.This route keeps the partial approximations centered(insofar as possible) on
-				//	the target x.The last dy added is thus the error indication.
+
 				y += dy;
 			}
 			_errorEst = dy;
@@ -164,7 +162,7 @@ namespace MML
 
 		// This routine stores an array _secDerY[0..numPoints-1] with second derivatives of the interpolating function
 		// at the tabulated points pointed to by xv, using function values pointed to by yv. If yp1 and/or
-		// ypn are equal to 1  1099 or larger, the routine is signaled to set the corresponding boundary
+		// ypn are equal to 10e99 or larger, the routine is signaled to set the corresponding boundary
 		// condition for a natural spline, with zero second derivative on that boundary; otherwise, they are
 		// the values of the first derivatives at the endpoints.
 		void initSecDerivs(const Real* xv, const Real* yv, Real yp1, Real ypn)
@@ -243,9 +241,9 @@ namespace MML
 		std::vector<SplineInterpRealFunc*> srp;
 	
 	public:
-		// Constructor. The _numPoints   _dim matrix ptsin inputs the data points. Input close as 0 for
+		// Constructor. The _numPoints _dim matrix ptsin inputs the data points. Input close as 0 for
 		// an open curve, 1 for a closed curve. (For a closed curve, the last data point should not
-		// duplicate the first — the algorithm will connect them.)
+		// duplicate the first - the algorithm will connect them.)
 		SplineInterpParametricCurve(Real minT, Real maxT, const Matrix<Real>& ptsin, bool close = 0)
 			: _numPoints(ptsin.RowNum()), _dim(ptsin.ColNum()), _bemba(close ? 2 * _numPoints : _numPoints),
 			_isCurveClosed(close), _curvePoints(_dim, _bemba), s(_bemba), ans(_dim), srp(_dim),
@@ -311,7 +309,7 @@ namespace MML
 		// closed curves, t is periodic with period 1
 		VectorN<Real, N> operator()(Real t) const
 		{
-			if (t < _minT || t > _maxT)
+			if (_isCurveClosed == true && (t < _minT || t > _maxT))
 				throw("SplineInterpParametricCurve: t outside interval");
 
 			VectorN<Real, N> ans;

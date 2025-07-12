@@ -52,7 +52,8 @@ namespace MML
 			const IScalarFunction<N>& _scalar_field;
 			const IParametricCurve<N>& _curve;
 		public:
-			HelperLineIntegralScalarFunc(const IScalarFunction<N>& scalarField, const IParametricCurve<N>& curve) : _scalar_field(scalarField), _curve(curve) {}
+			HelperLineIntegralScalarFunc(const IScalarFunction<N>& scalarField, const IParametricCurve<N>& curve) 
+					: _scalar_field(scalarField), _curve(curve) {}
 
 			Real operator()(Real t) const
 			{
@@ -60,9 +61,6 @@ namespace MML
 
 				auto field_val = _scalar_field(_curve(t));
 				auto ret = field_val * tangent_vec.NormL2();
-
-				//auto gradient = ScalarFieldOperations::GradientCart(_potential, _curve(t));
-				//auto ret = tangent_vec.ScalarProductCartesian(gradient);
 
 				return ret;
 			}
@@ -74,7 +72,8 @@ namespace MML
 			const IVectorFunction<N>& _vector_field;
 			const IParametricCurve<N>& _curve;
 		public:
-			HelperLineIntegralVectorFunc(const IVectorFunction<N>& vectorField, const IParametricCurve<N>& curve) : _vector_field(vectorField), _curve(curve) {}
+			HelperLineIntegralVectorFunc(const IVectorFunction<N>& vectorField, const IParametricCurve<N>& curve) 
+					: _vector_field(vectorField), _curve(curve) {}
 
 			Real operator()(Real t) const
 			{
@@ -99,22 +98,23 @@ namespace MML
 																		const Real a, const Real b)
 		{
 			// TODO
+      return 0.0;
 		}
 
 		static Real LineIntegral(const IScalarFunction<3>& scalarField, const IParametricCurve<3>& curve, 
-														 const Real a, const Real b, const Real eps = Defaults::WorkIntegralPrecision)
+														 const Real t1, const Real t2, const Real eps = Defaults::WorkIntegralPrecision)
 		{
 			HelperLineIntegralScalarFunc helper(scalarField, curve);
 
-			return IntegrateTrap(helper, a, b, nullptr, nullptr, eps);
+			return IntegrateTrap(helper, t1, t2, nullptr, nullptr, eps);
 		}
 
 		static Real LineIntegral(const IVectorFunction<3>& vectorField, const IParametricCurve<3>& curve, 
-														 const Real a, const Real b, const Real eps = Defaults::LineIntegralPrecision)
+														 const Real t1, const Real t2, const Real eps = Defaults::LineIntegralPrecision)
 		{
 			HelperLineIntegralVectorFunc helper(vectorField, curve);
 
-			return IntegrateTrap(helper, a, b, nullptr, nullptr, eps);
+			return IntegrateTrap(helper, t1, t2, nullptr, nullptr, eps);
 		}
 	};
 } // end namespace

@@ -341,6 +341,7 @@ namespace MML
 				return false;
 		}
 	};
+
 	class CoordTransf3DCartOblique : public CoordTransfWithInverse<Vector3Cartesian, Vector3Cartesian, 3>
 	{
 	private:

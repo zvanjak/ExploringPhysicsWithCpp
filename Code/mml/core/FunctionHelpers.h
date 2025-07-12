@@ -15,9 +15,9 @@
 namespace MML
 {
 
-	static RealPolynom TaylorSeries2(IRealFunction& f, Real a)
+	static PolynomRealFunc TaylorSeries2(IRealFunction& f, Real a)
 	{
-		RealPolynom ret(2);
+		PolynomRealFunc ret(2);
 
 		Real val = f(a);
 		Real coef1 = Derivation::NDer6(f, a);
@@ -29,9 +29,9 @@ namespace MML
 
 		return ret;
 	}
-	static RealPolynom TaylorSeries3(IRealFunction& f, Real a)
+	static PolynomRealFunc TaylorSeries3(IRealFunction& f, Real a)
 	{
-		RealPolynom ret(3);
+		PolynomRealFunc ret(3);
 
 		Real val = f(a);
 		Real coef1 = Derivation::NDer6(f, a);

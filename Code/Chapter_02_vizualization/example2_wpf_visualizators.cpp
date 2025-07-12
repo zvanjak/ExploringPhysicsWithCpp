@@ -19,6 +19,9 @@
 #include "tools/Visualizer.h"
 #endif
 
+//#include "../test_data/parametric_curves_test_bed.h"
+//#include "../test_data/Fields.h"
+
 
 using namespace MML;
 using namespace MML::Curves;
@@ -56,7 +59,7 @@ void Example3_WPF_Real_function_visualization()
 	ODESystemSolver<RK5_CashKarp_Stepper> solver(lorentz_system);
 	ODESystemSolution sol = solver.integrate(ystart, 0.0, 50.0, 0.1, 1e-08, 0.01);
 
-	Visualizer::VisualizeODESysSolAsMultiFunc(sol, "Lorentz system", "example3_wpf_lorentz.txt");
+	Visualizer::VisualizeODESysSolAsMultiFunc(sol, "Lorentz system", std::vector<std::string>{"x", "y", "z"}, "example3_wpf_lorentz.txt");
 
 	PolynomInterpRealFunc 	comp1 = sol.getSolutionAsPolyInterp(0, 3);
 	PolynomInterpRealFunc 	comp2 = sol.getSolutionAsPolyInterp(1, 3);

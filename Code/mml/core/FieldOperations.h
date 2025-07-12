@@ -39,27 +39,6 @@ namespace MML
 
 			return ret;
 		}
-
-		template<int N>
-		static Real Divergence(const IVectorFunction<N>& vectorField, const VectorN<Real, N>& pos, 
-													 const MetricTensorField<N>& metricTensorField)
-		{
-			Real div = 0.0;
-			VectorN<Real, N> vec_val = vectorField(pos);
-
-			for (int i = 0; i < N; i++)
-			{
-				div += Derivation::DeriveVecPartial<N>(vectorField, i, i, pos, nullptr);
-
-				// correction for general coordinates
-				for (int k = 0; k < N; k++)
-				{
-					div += vec_val[k] * metricTensorField.GetChristoffelSymbolSecondKind(i, i, k, pos);
-				}
-			}
-			return div;
-		}
-
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////                   GRADIENT                     /////////////////////////////
 		template<int N>
@@ -180,6 +159,26 @@ namespace MML
 
 	namespace VectorFieldOperations
 	{
+		template<int N>
+		static Real Divergence(const IVectorFunction<N>& vectorField, const VectorN<Real, N>& pos,
+													const MetricTensorField<N>& metricTensorField)
+		{
+			Real div = 0.0;
+			VectorN<Real, N> vec_val = vectorField(pos);
+
+			for (int i = 0; i < N; i++)
+			{
+				div += Derivation::DeriveVecPartial<N>(vectorField, i, i, pos, nullptr);
+
+				// correction for general coordinates
+				for (int k = 0; k < N; k++)
+				{
+					div += vec_val[k] * metricTensorField.GetChristoffelSymbolSecondKind(i, i, k, pos);
+				}
+			}
+			return div;
+		}
+
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////                  DIVERGENCE                    /////////////////////////////
 		template<int N>
@@ -276,7 +275,7 @@ namespace MML
 			Real dphidr = Derivation::DeriveVecPartial<3>(vectorField, 1, 0, pos, nullptr);
 			Real drdphi = Derivation::DeriveVecPartial<3>(vectorField, 0, 1, pos, nullptr);
 
-			Vector3Cylindrical ret{ (Real)(1.0 / pos[0] * dzdphi - dphidz), drdz - dzdr, 1 / pos[0] * (vals[1] + pos[0] * dphidr - drdphi) };
+			Vector3Cylindrical ret{(1 / pos[0] * dzdphi - dphidz), drdz - dzdr, 1 / pos[0] * (vals[1] + pos[0] * dphidr - drdphi)};
 
 			return ret;
 		}

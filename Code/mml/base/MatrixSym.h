@@ -210,7 +210,7 @@ namespace MML
 
 			return *this;
 		}
-		MatrixSym& operator=(MatrixSym&& m)
+		MatrixSym& operator=(MatrixSym&& m) noexcept
 		{
 			if (this == &m)
 				return *this;

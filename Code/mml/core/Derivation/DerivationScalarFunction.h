@@ -570,7 +570,6 @@ namespace MML
 		template<int N>
 		static inline VectorN<Real, N>(*DerivePartialAll)(const IScalarFunction<N>& f, const VectorN<Real, N>& point, 
 																											VectorN<Real, N>* error) = Derivation::NDer4PartialByAll;
-
 	}
 }
 

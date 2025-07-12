@@ -43,6 +43,16 @@ namespace MML
 			}
 			outVar = (outVar - ep * ep / n) / (n - 1);
 		}
+		static void AvgStdDev(const Vector<Real>& data, Real& outAvg, Real& outStdDev)
+		{
+			Real var;
+			int n = data.size();
+			if (n <= 0)
+				throw StatisticsError("Vector size must be greater than 0 in AvgStdDev");
+			AvgVar(data, outAvg, var);
+			outStdDev = sqrt(var);
+		}
+
 
 		static void Moments(const Vector<Real>& data, Real& ave, Real& adev, Real& sdev, Real& var, Real& skew, Real& curt)
 		{

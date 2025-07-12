@@ -11,9 +11,9 @@ namespace MML
 	struct Integral2DInner : public IRealFunction
 	{
 		mutable Real				_currX;
-		IScalarFunction<2>& _funcToIntegrate;
+		const IScalarFunction<2>& _funcToIntegrate;
 
-		Integral2DInner(IScalarFunction<2>& func) : _currX(0.0), _funcToIntegrate(func) {}
+		Integral2DInner(const IScalarFunction<2>& func) : _currX(0.0), _funcToIntegrate(func) {}
 
 		Real operator()(const Real y) const
 		{
@@ -27,12 +27,12 @@ namespace MML
 		mutable Integral2DInner _fInner;
 
 		IntegrationMethod			_integrMethod;
-		IScalarFunction<2>&		_funcToIntegrate;
+		const IScalarFunction<2>&		_funcToIntegrate;
 
 		Real(*_yRangeLow)(Real);
 		Real(*_yRangeUpp)(Real);
 
-		Integral2DOuter(IScalarFunction<2>& func, IntegrationMethod inMethod, 
+		Integral2DOuter(const IScalarFunction<2>& func, IntegrationMethod inMethod, 
 										Real yy1(Real), Real yy2(Real)) 
 				: _yRangeLow(yy1), _yRangeUpp(yy2), 
 					_fInner(func), _funcToIntegrate(func), _integrMethod(inMethod)	{	}
@@ -55,7 +55,7 @@ namespace MML
 		}
 	};
 
-	static Real Integrate2D(IScalarFunction<2>& func, IntegrationMethod method, 
+	static Real Integrate2D(const IScalarFunction<2>& func, IntegrationMethod method, 
 													const Real x1, const Real x2, 
 													Real y1(Real), Real y2(Real))
 	{

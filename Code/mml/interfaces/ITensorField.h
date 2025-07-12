@@ -23,7 +23,7 @@ namespace MML
 		int getNumContravar() const { return _numContravar; }
 		int getNumCovar()			const { return _numCovar; }
 
-		// concrete implementations need to provide this
+		// concrete implementations need to provide this 
 		virtual Real Component(int i, int j, const VectorN<Real, N>& pos) const = 0;
 
 		virtual ~ITensorField2() {}

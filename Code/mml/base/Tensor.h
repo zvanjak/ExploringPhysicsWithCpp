@@ -81,7 +81,7 @@ namespace MML
 
 			return result;
 		}
-		Tensor2 operator*=(Real scalar) const
+		Tensor2 operator*(Real scalar) const
 		{
 			Tensor2 result(_numContravar, _numCovar);
 
@@ -130,7 +130,7 @@ namespace MML
 
 		void   Print(std::ostream& stream, int width, int precision) const
 		{
-			stream << std::fixed << "N = " << N << std::endl;
+			stream << std::fixed << "(N = " << N << ")" << std::endl;
 
 			for (size_t i = 0; i < N; i++)
 			{
@@ -167,6 +167,26 @@ namespace MML
 
 			for (int i = _numCovar; i < _numCovar + _numContravar; i++)
 				_isContravar[i] = true;
+		}
+		Tensor3(int nCovar, int nContraVar, std::initializer_list<Real> values) : _numCovar(nCovar), _numContravar(nContraVar)
+		{
+			if (_numContravar + _numCovar != 3)
+				throw TensorCovarContravarNumError("Tensor3 ctor, wrong number of contravariant and covariant indices", nCovar, nContraVar);
+			
+			for (int i = 0; i < _numCovar; i++)
+				_isContravar[i] = false;
+			
+			for (int i = _numCovar; i < _numCovar + _numContravar; i++)
+				_isContravar[i] = true;
+			
+			auto val = values.begin();
+			for (size_t i = 0; i < N; ++i)
+				for (size_t j = 0; j < N; ++j)
+					for (size_t k = 0; k < N; ++k)
+						if (val != values.end())
+							_coeff[i][j][k] = *val++;
+						else
+							_coeff[i][j][k] = 0.0;
 		}
 
 		int   NumContravar() const override { return _numContravar; }

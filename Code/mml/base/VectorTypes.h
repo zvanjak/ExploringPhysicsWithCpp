@@ -23,6 +23,7 @@ namespace MML
 			_val[0] = b.X() - a.X();
 			_val[1] = b.Y() - a.Y();
 		}
+		Vector2Cartesian(std::initializer_list<Real> list) : VectorN<Real, 2>(list) {}
 
 		Real  X() const { return _val[0]; }
 		Real& X() { return _val[0]; }

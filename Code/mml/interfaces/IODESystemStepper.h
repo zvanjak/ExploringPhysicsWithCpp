@@ -10,11 +10,11 @@
 
 namespace MML
 {
-	class IODESystemStepperCalculator	{
+	class IODESystemStepper	{
 	public:
 		virtual void doStep(const IODESystem& odeSystem, 
-												const Real x, const Vector<Real>& y_start, const Vector<Real>& dydx,
-												const Real h, Vector<Real>& yout, Vector<Real>& yerr) = 0;
+												const Real t, const Vector<Real>& x_start, const Vector<Real>& dxdt,
+												const Real h, Vector<Real>& xout, Vector<Real>& xerr) = 0;
 	};
 }
 #endif

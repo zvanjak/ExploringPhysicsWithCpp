@@ -8,9 +8,15 @@
 #include <algorithm>
 #include <memory>
 #include <functional>
+#include <type_traits>
 
 #include <string>
 #include <vector>
+#include <array>
+#include <tuple>
+#include <map>
+#include <set>
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -21,6 +27,7 @@
 #include <numbers>
 
 #include <random>
+#include <chrono>
 
 #include "MMLExceptions.h"
 
@@ -56,38 +63,42 @@
 
 
 // Complex must have the same underlaying type as Real
-typedef double             Real;      // default real type (float, long double tested, __float128 TODO!!!)
+typedef double             Real;      // default real type 
+//typedef float							 Real;    // TESTED  
+//typedef long double				 Real;    // TESTED  
+//typedef __float128				 Real;    // gcc extension - TODO!
+
 typedef std::complex<Real> Complex;   // default complex type
 
 
 namespace MML
 {
-	// Global paths for Visualizers
+	// Global paths for library
 	static const std::string MML_GLOBAL_PATH = "E:/Projects/ExploringPhysicsWithCpp";
 	//static const std::string MML_GLOBAL_PATH = "/usr/zvanjak/projects/ExploringPhysicsWithCpp";
 
 	static const std::string MML_PATH_ResultFiles = MML_GLOBAL_PATH + "/results/";
 	
-	static const std::string MML_PATH_RealFuncViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/real_function_visualizer/MML_RealFunctionVisualizer.exe";
+	static const std::string MML_PATH_RealFuncViz_Win = MML_GLOBAL_PATH + 
+							"/tools/visualizers/win/real_function_visualizer/MML_RealFunctionVisualizer.exe";
 	
-	static const std::string MML_PATH_SurfaceViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/scalar_function_2d_visualizer/MML_ScalarFunction2D_Visualizer.exe";
+	static const std::string MML_PATH_SurfaceViz_Win = MML_GLOBAL_PATH + 
+							"/tools/visualizers/win/scalar_function_2d_visualizer/MML_ScalarFunction2D_Visualizer.exe";
 	
-	static const std::string MML_PATH_ParametricCurve2DViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/parametric_curve_2d_visualizer/MML_ParametricCurve2D_Visualizer.exe";
-	static const std::string MML_PATH_ParametricCurve3DViz = MML_GLOBAL_PATH + 
-							"/tools/visualizers/parametric_curve_3d_visualizer/MML_ParametricCurve3D_Visualizer.exe";
+	static const std::string MML_PATH_ParametricCurve2DViz_Win = MML_GLOBAL_PATH + 
+							"/tools/visualizers/win/parametric_curve_2d_visualizer/MML_ParametricCurve2D_Visualizer.exe";
+	static const std::string MML_PATH_ParametricCurve3DViz_Win = MML_GLOBAL_PATH + 
+							"/tools/visualizers/win/parametric_curve_3d_visualizer/MML_ParametricCurve3D_Visualizer.exe";
 	
-	static const std::string MML_PATH_VectorField2DViz = MML_GLOBAL_PATH +
-							"/tools/visualizers/vector_field_2d_visualizer/MML_VectorField2D_Visualizer.exe";
-	static const std::string MML_PATH_VectorField3DViz = MML_GLOBAL_PATH +
-							"/tools/visualizers/vector_field_3d_visualizer/MML_VectorField3D_Visualizer.exe";
+	static const std::string MML_PATH_VectorField2DViz_Win = MML_GLOBAL_PATH +
+							"/tools/visualizers/win/vector_field_2d_visualizer/MML_VectorField2D_Visualizer.exe";
+	static const std::string MML_PATH_VectorField3DViz_Win = MML_GLOBAL_PATH +
+							"/tools/visualizers/win/vector_field_3d_visualizer/MML_VectorField3D_Visualizer.exe";
 
-	static const std::string MML_PATH_Particle2DViz = MML_GLOBAL_PATH +
-							"/tools/visualizers/particle_2d_visualizer/MML_ParticleVisualizer2D.exe";
-	static const std::string MML_PATH_Particle3DViz = MML_GLOBAL_PATH +
-							"/tools/visualizers/particle_3d_visualizer/MML_ParticleVisualizer3D.exe";
+	static const std::string MML_PATH_Particle2DViz_Win = MML_GLOBAL_PATH +
+							"/tools/visualizers/win/particle_2d_visualizer/MML_ParticleVisualizer2D.exe";
+	static const std::string MML_PATH_Particle3DViz_Win = MML_GLOBAL_PATH +
+							"/tools/visualizers/win/particle_3d_visualizer/MML_ParticleVisualizer3D.exe";
 
 	template<class Type>
 	static Real Abs(const Type& a)
@@ -111,26 +122,8 @@ namespace MML
 
 	template<class T> inline T POW2(const T& a) { const T& t = a; return t * t; }
 	template<class T> inline T POW3(const T& a) { const T& t = a; return t * t * t; }
-	template<class T> inline T POW4(const T& a) { const T& t = a; return t * t * t * t; }
+	template<class T> inline T POW4(const T& a) { const T& t = a * a; return t * t; }
 
-	class Random
-	{
-	public:
-		static Real UniformReal(Real min, Real max)
-		{
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_real_distribution<Real> dis(min, max);
-			return dis(gen);
-		}
-		static int UniformInt(int min, int max)
-		{
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_int_distribution<int> dis(min, max);
-			return dis(gen);
-		}
-	};
 	////////////                  Constants                ////////////////
 	namespace Constants
 	{
@@ -149,6 +142,43 @@ namespace MML
 		static inline const Real PosInf = std::numeric_limits<Real>::max();
 		static inline const Real NegInf = -std::numeric_limits<Real>::max();
 	}
+
+	class Random
+	{
+	public:
+		static Real UniformReal(Real min, Real max)
+		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<Real> dis(min, max);
+			return dis(gen);
+		}
+		static int UniformInt(int min, int max)
+		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<int> dis(min, max);
+			return dis(gen);
+		}
+		static Real UniformVecDirection2(Real& vx, Real& vy, Real abs)
+		{
+			// Generate a random angle in the range [0, 2*PI)
+			Real angle = UniformReal(0, 2 * Constants::PI);
+			vx = abs * std::cos(angle);
+			vy = abs * std::sin(angle);
+			return abs;
+		}
+		static Real UniformVecDirection3(Real& vx, Real& vy, Real& vz, Real abs)
+		{
+			// Generate a random direction on the sphere with radus 'abs'
+			Real theta = UniformReal(0, 2 * Constants::PI); // azimuthal angle
+			Real phi = UniformReal(0, Constants::PI); // polar angle
+			vx = abs * std::sin(phi) * std::cos(theta);
+			vy = abs * std::sin(phi) * std::sin(theta);
+			vz = abs * std::cos(phi);
+			return abs;
+		}
+	};
 
 	// a * x^2 + b * x + c = 0
 	static int  SolveQuadratic(Real a, Real b, Real c,
@@ -292,8 +322,12 @@ namespace MML
 		static constexpr float Vec3CartIsEqualTolerance = 1e-6f;
 		static constexpr float Vec3CartIsParallelTolerance = 1e-6f;
 
+    static constexpr float Line3DAreEqualTolerance = 1e-6f;
+		static constexpr float Line3DIsPointOnLineTolerance = 1e-6f;
 		static constexpr float Line3DIsPerpendicularTolerance = 1e-6f;
 		static constexpr float Line3DIsParallelTolerance = 1e-6f;
+		static constexpr float Line3DIntersectionTolerance = 1e-6f;
+
 		static constexpr float Plane3DIsPointOnPlaneTolerance = 1e-6f;
 
 		static constexpr float IsMatrixSymmetricTolerance = 1e-6f;
@@ -322,8 +356,12 @@ namespace MML
 		static constexpr double Vec3CartIsEqualTolerance = 1e-10;
 		static constexpr double Vec3CartIsParallelTolerance = 1e-10;
 
+    static constexpr double Line3DAreEqualTolerance = 1e-10;
+		static constexpr double Line3DIsPointOnLineTolerance = 1e-10;
 		static constexpr double Line3DIsPerpendicularTolerance = 1e-10;
 		static constexpr double Line3DIsParallelTolerance = 1e-10;
+		static constexpr double Line3DIntersectionTolerance = 1e-10;
+
 		static constexpr double Plane3DIsPointOnPlaneTolerance = 1e-10;
 
 		static constexpr double IsMatrixSymmetricTolerance = 1e-10;
@@ -352,8 +390,12 @@ namespace MML
 		static constexpr long double Vec3CartIsEqualTolerance = 1e-15;
 		static constexpr long double Vec3CartIsParallelTolerance = 1e-15;
 
+    static constexpr long double Line3DAreEqualTolerance = 1e-15;
+		static constexpr long double Line3DIsPointOnLineTolerance = 1e-15;
 		static constexpr long double Line3DIsPerpendicularTolerance = 1e-15;
 		static constexpr long double Line3DIsParallelTolerance = 1e-15;
+		static constexpr long double Line3DIntersectionTolerance = 1e-15;
+
 		static constexpr long double Plane3DIsPointOnPlaneTolerance = 1e-15;
 
 		static constexpr long double IsMatrixSymmetricTolerance = 1e-15;
@@ -361,6 +403,19 @@ namespace MML
 		static constexpr long double IsMatrixUnitTolerance = 1e-15;
 		static constexpr long double IsMatrixOrthogonalTolerance = 1e-15;
 	};
+
+
+	// Primary template: defaults to false
+	template<typename T>
+	struct is_simple_numeric : std::is_arithmetic<T> {};
+
+	// Specializations for std::complex types
+	template<typename T>
+	struct is_simple_numeric<std::complex<T>> : std::is_arithmetic<T> {};
+
+	// Helper variable template (C++14 and later)
+	template<typename T>
+	inline constexpr bool is_MML_simple_numeric = is_simple_numeric<T>::value;
 
 	namespace Defaults
 	{
@@ -387,8 +442,12 @@ namespace MML
 		static inline const Real Vec3CartIsEqualTolerance		 = PrecisionValues<Real>::Vec3CartIsEqualTolerance;
 		static inline const Real Vec3CartIsParallelTolerance = PrecisionValues<Real>::Vec3CartIsParallelTolerance;
 
-		static inline const Real Line3DIsPerpendicularTolerance = PrecisionValues<Real>::Line3DIsPerpendicularTolerance;
+		static inline const Real Line3DAreEqualTolerance				= PrecisionValues<Real>::Line3DAreEqualTolerance;
+		static inline const Real Line3DIsPointOnLineTolerance		= PrecisionValues<Real>::Line3DIsPointOnLineTolerance;
+    static inline const Real Line3DIsPerpendicularTolerance = PrecisionValues<Real>::Line3DIsPerpendicularTolerance;
 		static inline const Real Line3DIsParallelTolerance			= PrecisionValues<Real>::Line3DIsParallelTolerance;
+		static inline const Real Line3DIntersectionTolerance		= PrecisionValues<Real>::Line3DIntersectionTolerance;
+		
 		static inline const Real Plane3DIsPointOnPlaneTolerance = PrecisionValues<Real>::Plane3DIsPointOnPlaneTolerance;
 
 		static inline const Real IsMatrixSymmetricTolerance  = PrecisionValues<Real>::IsMatrixSymmetricTolerance;

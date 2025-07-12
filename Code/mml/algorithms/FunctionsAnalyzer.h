@@ -12,7 +12,9 @@
 #include "core/FieldOperations.h"
 
 #include "algorithms/RootFinding.h"
+#include "algorithms/Statistics.h"
 
+using namespace MML::RootFinding;
 
 namespace MML
 {
@@ -242,6 +244,26 @@ namespace MML
 			}
 			return max;
 		}
+	
+		// If given a periodic function, calculates the average period of the roots
+		// of the function in the given interval
+		Real calcRootsPeriod(Real t1, Real t2, int numPoints)
+		{
+			Vector<Real> root_brack_x1(10), root_brack_x2(10);
+			int	numFoundRoots = FindRootBrackets(_f, t1, t2, numPoints, root_brack_x1, root_brack_x2);
+
+			Vector<Real> roots(numFoundRoots);
+			Vector<Real> rootDiffs(numFoundRoots - 1);
+			for (int i = 0; i < numFoundRoots; i++)
+			{
+				roots[i] = FindRootBisection(_f, root_brack_x1[i], root_brack_x2[i], 1e-7);
+
+				if (i > 0)
+					rootDiffs[i - 1] = roots[i] - roots[i - 1];
+			}
+
+			return Statistics::Avg(rootDiffs);
+		}
 	};
 
 	class RealFunctionComparer
@@ -287,8 +309,6 @@ namespace MML
 			for (int i = 0; i < numPoints; i++)
 				if (_f1(a + i * step) != 0.0)
 					sum += std::abs(_f1(a + i * step) - _f2(a + i * step)) / std::abs(_f1(a + i * step));
-				else
-					--numPoints;
 
 			return sum;
 		}

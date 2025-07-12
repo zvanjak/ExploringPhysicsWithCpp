@@ -18,7 +18,7 @@ namespace MML
 		// moze se definirati od tijela, koe ima funkciju isWithin(), i onda komponirati
 
 	public:
-		static Real VolumeIntegral(const IScalarFunction<3>& scalarField, const SolidSurfaces3D& solid)
+		static Real VolumeIntegral(const IScalarFunction<3>& scalarField, const BodyWithRectSurfaces& solid)
 		{
 			return 0.0;
 		}

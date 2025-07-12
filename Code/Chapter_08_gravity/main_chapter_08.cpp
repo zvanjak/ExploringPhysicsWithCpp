@@ -1,12 +1,16 @@
-#include "MMLBase.h"
+#ifdef MML_USE_SINGLE_HEADER
+#include "MML.h"
+#else
 #include "MMLBase.h"
 
 #include "interfaces/IODESystem.h"
 
-#include "core/Derivation.h"
+#include "base/VectorTypes.h"
 #include "base/Function.h"
 
-#include "base/VectorTypes.h"
+#include "core/Curves.h"
+#include "core/Derivation.h"
+#include "core/Integration/PathIntegration.h"
 
 #include "algorithms/ODESystemSolver.h"
 #include "algorithms/ODESystemStepCalculators.h"
@@ -14,181 +18,294 @@
 
 #include "tools/Serializer.h"
 #include "tools/Visualizer.h"
+#include "tools/ConsolePrinter.h"
 
+#include "../mpl/Gravity/GravityBase.h"
+#include "../mpl/Gravity/TwoBodySimulator.h"
+#include "../mpl/Gravity/TwoBodySimulator2D.h"
+#endif
 
 using namespace MML;
+using namespace MPL;
 
-
-class TwoBodyGravityConfig
+// calculate, simulate and visualize motion for two bodies in 2D
+void Demo_TwoMasses2D()
 {
-public:
-	Real _G = 100;
-	Real _m1, _m2;
-	Vector3Cartesian _r1, _r2;
-	Vector3Cartesian _v1, _v2;
+	//TwoBodyGravitySimConfig2D config = TwoBodyGravityConfigGenerator2D::Config1_same_bodies_elliptic_CM_static();
+	//TwoBodyGravitySimConfig2D config = TwoBodyGravityConfigGenerator2D::Config2_same_bodies_elliptic_CM_moving();
+	//TwoBodyGravitySimConfig2D config = TwoBodyGravityConfigGenerator2D::Config3_diff_bodies_elliptic_CM_static();
+	//TwoBodyGravitySimConfig2D config = TwoBodyGravityConfigGenerator2D::Config4_diff_bodies_elliptic_CM_moving();
+	TwoBodyGravitySimConfig2D config = TwoBodyGravityConfigGenerator2D::Config5_same_bodies_hyperbolic_CM_static();
+	//TwoBodyGravitySimConfig2D config = TwoBodyGravityConfigGenerator2D::Config6_same_bodies_hyperbolic_CM_moving();
 
-	TwoBodyGravityConfig(Real m1, Real m2, Vector3Cartesian r1, Vector3Cartesian r2, Vector3Cartesian v1, Vector3Cartesian v2)
-		: _m1(m1), _m2(m2), _r1(r1), _r2(r2), _v1(v1), _v2(v2)
-	{	}
+	TwoBodiesGravitySimulator2D sim(config);
 
-	TwoBodyGravityConfig(Real G, Real m1, Real m2, Vector3Cartesian r1, Vector3Cartesian r2, Vector3Cartesian v1, Vector3Cartesian v2)
-		: _G(G), _m1(m1), _m2(m2), _r1(r1), _r2(r2), _v1(v1), _v2(v2)
-	{	}
+	//auto result = sim.SolveRK5(100, 1e-08, 0.5);
+	//auto result = sim.SolveRK5(250, 1e-08, 0.5);
+	auto result = sim.SolveRK5(50000, 1e-08, 0.5);
+	//auto result = sim.SolveRK5(1000, 1e-08, 0.5);
 
-};
+	result.VisualizeSolution("gravity_example_2d");
 
-class TwoBodyGravitySystemODE : public IODESystem
-{
-	TwoBodyGravityConfig _config;
 
-public:
-	TwoBodyGravitySystemODE(const TwoBodyGravityConfig& config)
-		: _config(config)
-	{	}
+	std::cout << "Results for two bodies simulation in 2D" << std::endl;
+	std::cout << "t = " << result._duration << std::endl;
+	std::cout << "Mass1 = " << result._config.Mass1() << std::endl;
+	std::cout << "Mass2 = " << result._config.Mass2() << std::endl;
+	std::cout << "G = " << result._config.G() << std::endl;
+	std::cout << "Number of steps = " << result.NumSteps() << std::endl;
 
-	int getDim() const override { return 12; }
-	void derivs(const Real t, const Vector<Real>& x, Vector<Real>& dxdt) const override
-	{
-		Vector3Cartesian r1{ x[0], x[1], x[2] };
-		Vector3Cartesian r2{ x[3], x[4], x[5] };
-		Vector3Cartesian v1{ x[6], x[7], x[8] };
-		Vector3Cartesian v2{ x[9], x[10], x[11] };
+	// calculate orbit type
+	std::string trajectoryType = TwoBodyGravityCalculator2D::GetTrajectoryType(config.G(), config.InitState().Body1(), config.InitState().Body2());
+	std::cout << "Trajectory type: " << trajectoryType << std::endl;
 
-		Vector3Cartesian r12 = r2 - r1;
-		Real dist = r12.NormL2();
-		
-		Vector3Cartesian f12 = _config._G * _config._m1 * _config._m2 / POW3(dist) * r12;
-		Vector3Cartesian f21 = -f12;
-		
-		dxdt[0] = v1[0];
-		dxdt[1] = v1[1];
-		dxdt[2] = v1[2];
-		dxdt[3] = v2[0];
-		dxdt[4] = v2[1];
-		dxdt[5] = v2[2];
-		dxdt[6] = f12[0] / _config._m1;
-		dxdt[7] = f12[1] / _config._m1;
-		dxdt[8] = f12[2] / _config._m1;
-		dxdt[9] = f21[0] / _config._m2;
-		dxdt[10] = f21[1] / _config._m2;
-		dxdt[11] = f21[2] / _config._m2;
-	}
-};
+	std::cout << "\nPosition and velocity values for both bodies" << std::endl;
+	int fmt1W = 10, fmt1D = 5;
+	std::vector<ColDesc> vecNames{ ColDesc("t", 11, 2, 'F'),
+																 ColDesc("x1", fmt1W, fmt1D, 'F'), ColDesc("y1", fmt1W, fmt1D, 'F'),
+																 ColDesc("x2", fmt1W, fmt1D, 'F'), ColDesc("y2", fmt1W, fmt1D, 'F'),
+																 ColDesc("v1_x", fmt1W, fmt1D, 'F'), ColDesc("v1_y", fmt1W, fmt1D, 'F'),
+																 ColDesc("v2_x", fmt1W, fmt1D, 'F'), ColDesc("v2_y", fmt1W, fmt1D, 'F') };
 
-class TwoBodiesGravitySimulator
-{
+	Vector<Real> t_vals = result.getTimes();
+	Vector<Real> x1_vals = result.getPos1X();
+	Vector<Real> y1_vals = result.getPos1Y();
+	Vector<Real> x2_vals = result.getPos2X();
+	Vector<Real> y2_vals = result.getPos2Y();
 
-public:
+	Vector<Real> v1_x_vals = result.getV1X();
+	Vector<Real> v1_y_vals = result.getV1Y();
+	Vector<Real> v2_x_vals = result.getV2X();
+	Vector<Real> v2_y_vals = result.getV2Y();
 
-	// solve and visualize trajectory
-	void SolveAndShowTrajectories(const TwoBodyGravityConfig &config, Real t)
-	{
-		TwoBodyGravitySystemODE ode(config);
-		
-		ODESystemSolver<RK5_CashKarp_Stepper> adaptSolver(ode);
-		ODESystemSolution solAdapt = adaptSolver.integrate(Vector<Real>{ config._r1[0], config._r1[1], config._r1[2], 
-																																		 config._r2[0], config._r2[1], config._r2[2], 
-																																		 config._v1[0], config._v1[1], config._v1[2], 
-																																		 config._v2[0], config._v2[1], config._v2[2] }, 
-																											 0, t, 0.01, 1e-06, 0.01);
-		
-		Vector<Real> t_vals = solAdapt.getTValues();
-		Vector<Real> r1_x_vals = solAdapt.getXValues(0);
-		Vector<Real> r1_y_vals = solAdapt.getXValues(1);
-		Vector<Real> r1_z_vals = solAdapt.getXValues(2);
-		Vector<Real> r2_x_vals = solAdapt.getXValues(3);
-		Vector<Real> r2_y_vals = solAdapt.getXValues(4);
-		Vector<Real> r2_z_vals = solAdapt.getXValues(5);
-		
-		// form ParametricCurve from these 3 vectors
-		std::vector<VectorN<Real, 3>> res1;
-		for (int i = 0; i < t_vals.size(); i++)
-			res1.push_back(VectorN<Real, 3>{r1_x_vals[i], r1_y_vals[i], r1_z_vals[i]});
-		Serializer::SaveAsParamCurve<3>(res1, "PARAMETRIC_CURVE_CARTESIAN_3D", "gravity_example_body1",
-																		0, t, t_vals.size(),
-																		MML_PATH_ResultFiles + "gravity_example_body1.txt");
-		
-		std::vector<VectorN<Real, 3>> res2;
-		for (int i = 0; i < t_vals.size(); i++)
-			res2.push_back(VectorN<Real, 3>{r2_x_vals[i], r2_y_vals[i], r2_z_vals[i]});
-		Serializer::SaveAsParamCurve<3>(res2, "PARAMETRIC_CURVE_CARTESIAN_3D", "gravity_example_body2",
-																		0, t, t_vals.size(),
-																		MML_PATH_ResultFiles + "gravity_example_body2.txt");
+	std::vector<Vector<Real>*> vecVals{ &t_vals, &x1_vals, &y1_vals, &x2_vals, &y2_vals,
+																			&v1_x_vals,&v1_y_vals, &v2_x_vals,&v2_y_vals };
 
-		Visualizer::VisualizeMultiParamCurve3D({ "gravity_example_body1.txt", "gravity_example_body2.txt" });
-	}
+	VerticalVectorPrinter vvp(vecNames, vecVals);
+	vvp.Print();
 
-	// calculate center of mass
-	Vec3Cart CenterOfMass(const TwoBodyGravityConfig &config) const
-	{
-		return (config._m1 * config._r1 + config._m2 * config._r2) / (config._m1 + config._m2);
-	}
+	std::cout << "\nCenter of mass position and velocity values" << std::endl;
+	int fmt2W = 10, fmt2D = 5;
+	std::vector<ColDesc> vecNames2{ ColDesc("t", 11, 2, 'F'),
+																	ColDesc("cm_x", fmt2W, fmt2D, 'F'), ColDesc("cm_y", fmt2W, fmt2D, 'F'),
+																	ColDesc("cm_vx", fmt2W, fmt2D, 'F'), ColDesc("cm_vy", fmt2W, fmt2D, 'F') };
 
-	// calculate reduced mass
-	Real ReducedMass(const TwoBodyGravityConfig &config) const
-	{
-		return config._m1 * config._m2 / (config._m1 + config._m2);
-	}
+	Vector<Real> cm_x_vals = result.getCMPosX();
+	Vector<Real> cm_y_vals = result.getCMPosY();
 
-	// calculate total potential energy
-	Real TotalPotentialEnergy(const TwoBodyGravityConfig &config) const
-	{
-		return -config._G * config._m1 * config._m2 / (config._r1 - config._r2).NormL2();
-	}
+	Vector<Real> cm_vx_vals = result.getCMVX();
+	Vector<Real> cm_vy_vals = result.getCMVY();
 
-	// calculate total kinetic energy
-	Real TotalKineticEnergy(const TwoBodyGravityConfig &config) const
-	{
-		return 0.5 * config._m1 * config._v1.NormL2() + 0.5 * config._m2 * config._v2.NormL2();
-	}
-};
+	std::vector<Vector<Real>*> vecVals2{ &t_vals, &cm_x_vals, &cm_y_vals,
+																			 &cm_vx_vals, &cm_vy_vals };
 
-// SolarSystem gravity simulator
+	VerticalVectorPrinter vvp2(vecNames2, vecVals2);
+	vvp2.Print();
 
-class SolarSystemGravitySimulator
-{
-	// ima definiranu putanju za sve planete
-	ParametricCurve<3> _planetPaths[9];
-};
+	std::cout << "\nTotal momentum and energy values" << std::endl;
+	int fmt3W = 12, fmt3D = 2;
+	std::vector<ColDesc> vecNames3{ ColDesc("t", 11, 2, 'F'),
+																	ColDesc("p_x", fmt3W, fmt3D, 'F'), ColDesc("p_y", fmt3W, fmt3D, 'F'),
+																	ColDesc("ke", fmt3W, fmt3D, 'F'), ColDesc("pe", fmt3W, fmt3D, 'F'), ColDesc("te", fmt3W, fmt3D, 'F') };
 
-void Demo_TwoMasses()
-{
-	Real G = 200;
-	Real m1 = 100;
-	Real m2 = 200;
-	Vec3Cart r1{ -100, -50, -50 };
-	Vec3Cart r2{ 50, -30, -40 };
-	Vec3Cart v1{ -5, 0, 5.0 };
-	Vec3Cart v2{ 5, 2, -5.0 };
+	Vector<Real> p_x_vals = result.getTotalMomentumX();
+	Vector<Real> p_y_vals = result.getTotalMomentumY();
 
-	TwoBodyGravityConfig config(G, m1, m2, r1, r2, v1, v2);
+	Vector<Real> ke_vals = result.getTotalKineticEnergy();
+	Vector<Real> pe_vals = result.getTotalPotentialEnergy();
+	Vector<Real> te_vals = result.getTotalEnergy();
 
-	TwoBodiesGravitySimulator sim;
+	std::vector<Vector<Real>*> vecVals3{ &t_vals, &p_x_vals, &p_y_vals,
+																			 &ke_vals, &pe_vals, &te_vals };
 
-	std::cout << "Center of mass   = " << sim.CenterOfMass(config) << std::endl;
-	std::cout << "Kinetic energy   = " << sim.TotalKineticEnergy(config) << std::endl;
-	std::cout << "Potential energy = " << sim.TotalPotentialEnergy(config) << std::endl;
+	VerticalVectorPrinter vvp3(vecNames3, vecVals3);
+	vvp3.Print();
 
-	sim.SolveAndShowTrajectories(config, 1000);
+
+
 }
 
-int main()
+// checking Kepler laws
+void Demo_Check_Kepler_laws()
+{
+
+}
+
+// two bodies in 3D
+// check conservation of momentum, energy and angular momentum
+void Demo_TwoMasses3D()
+{
+	//TwoBodyGravitySimConfig config = TwoBodyGravityConfigGenerator::Config1_same_bodies_elliptic_CM_static();
+	TwoBodyGravitySimConfig config = TwoBodyGravityConfigGenerator::Config2_same_bodies_elliptic_CM_moving();
+
+	TwoBodiesGravitySimulator sim(config);
+
+	auto result = sim.SolveRK5(300, 1e-08, 0.1);
+
+	std::cout << "Results for two bodies simulation in 3D" << std::endl;
+	std::cout << "t = " << result._duration << std::endl;
+	std::cout << "Mass1 = " << result._config.Mass1() << std::endl;
+	std::cout << "Mass2 = " << result._config.Mass2() << std::endl;
+	std::cout << "G = " << result._config.G() << std::endl;
+	std::cout << "Number of steps = " << result._vecTimes.size() << std::endl;
+
+	std::cout << "\nPosition and velocity values for both bodies" << std::endl;
+	int fmt1W = 10, fmt1D = 5;
+	std::vector<ColDesc> vecNames{ ColDesc("t", 11, 2, 'F'),
+																 ColDesc("x1", fmt1W, fmt1D, 'F'), ColDesc("y1", fmt1W, fmt1D, 'F'), ColDesc("z1", fmt1W, fmt1D, 'F'),
+																 ColDesc("x2", fmt1W, fmt1D, 'F'), ColDesc("y2", fmt1W, fmt1D, 'F'), ColDesc("z2", fmt1W, fmt1D, 'F'),
+																 ColDesc("v1_x", fmt1W, fmt1D, 'F'), ColDesc("v1_y", fmt1W, fmt1D, 'F'), ColDesc("v1_z", fmt1W, fmt1D, 'F'),
+																 ColDesc("v2_x", fmt1W, fmt1D, 'F'), ColDesc("v2_y", fmt1W, fmt1D, 'F'), ColDesc("v2_z", fmt1W, fmt1D, 'F') };
+
+	Vector<Real> t_vals = result.getTimes();
+	Vector<Real> x1_vals = result.getPos1X();
+	Vector<Real> y1_vals = result.getPos1Y();
+	Vector<Real> z1_vals = result.getPos1Z();
+	Vector<Real> x2_vals = result.getPos2X();
+	Vector<Real> y2_vals = result.getPos2Y();
+	Vector<Real> z2_vals = result.getPos2Z();
+
+	Vector<Real> v1_x_vals = result.getV1X();
+	Vector<Real> v1_y_vals = result.getV1Y();
+	Vector<Real> v1_z_vals = result.getV1Z();
+	Vector<Real> v2_x_vals = result.getV2X();
+	Vector<Real> v2_y_vals = result.getV2Y();
+	Vector<Real> v2_z_vals = result.getV2Z();
+
+	std::vector<Vector<Real>*> vecVals{ &t_vals, &x1_vals, &y1_vals, &z1_vals, &x2_vals, &y2_vals, &z2_vals,
+																			&v1_x_vals,&v1_y_vals,&v1_z_vals,&v2_x_vals,&v2_y_vals,&v2_z_vals };
+
+	VerticalVectorPrinter vvp(vecNames, vecVals);
+	vvp.Print();
+
+	std::cout << "\nCenter of mass position and velocity values" << std::endl;
+	int fmt2W = 10, fmt2D = 5;
+	std::vector<ColDesc> vecNames2{ ColDesc("t", 11, 2, 'F'),
+																	ColDesc("cm_x", fmt2W, fmt2D, 'F'), ColDesc("cm_y", fmt2W, fmt2D, 'F'), ColDesc("cm_z", fmt2W, fmt2D, 'F'),
+																	ColDesc("cm_vx", fmt2W, fmt2D, 'F'), ColDesc("cm_vy", fmt2W, fmt2D, 'F'), ColDesc("cm_vz", fmt2W, fmt2D, 'F') };
+
+	Vector<Real> cm_x_vals = result.getCMPosX();
+	Vector<Real> cm_y_vals = result.getCMPosY();
+	Vector<Real> cm_z_vals = result.getCMPosZ();
+
+	Vector<Real> cm_vx_vals = result.getCMVX();
+	Vector<Real> cm_vy_vals = result.getCMVY();
+	Vector<Real> cm_vz_vals = result.getCMVZ();
+
+	std::vector<Vector<Real>*> vecVals2{ &t_vals, &cm_x_vals, &cm_y_vals, &cm_z_vals,
+																			 &cm_vx_vals, &cm_vy_vals, &cm_vz_vals };
+
+	VerticalVectorPrinter vvp2(vecNames2, vecVals2);
+	vvp2.Print();
+
+	std::cout << "\nTotal momentum and energy values" << std::endl;
+	int fmt3W = 12, fmt3D = 2;
+	std::vector<ColDesc> vecNames3{ ColDesc("t", 11, 2, 'F'),
+																	ColDesc("p_x", fmt3W, fmt3D, 'F'), ColDesc("p_y", fmt3W, fmt3D, 'F'), ColDesc("p_z", fmt3W, fmt3D, 'F'),
+																	ColDesc("ke", fmt3W, fmt3D, 'F'), ColDesc("pe", fmt3W, fmt3D, 'F'), ColDesc("te", fmt3W, fmt3D, 'F') };
+
+	Vector<Real> p_x_vals = result.getTotalMomentumX();
+	Vector<Real> p_y_vals = result.getTotalMomentumY();
+	Vector<Real> p_z_vals = result.getTotalMomentumZ();
+
+	Vector<Real> ke_vals = result.getTotalKineticEnergy();
+	Vector<Real> pe_vals = result.getTotalPotentialEnergy();
+	Vector<Real> te_vals = result.getTotalEnergy();
+
+	std::vector<Vector<Real>*> vecVals3{ &t_vals, &p_x_vals, &p_y_vals, &p_z_vals,
+																			 &ke_vals, &pe_vals, &te_vals };
+
+	VerticalVectorPrinter vvp3(vecNames3, vecVals3);
+	vvp3.Print();
+
+	std::cout << "\nAngular momentum values" << std::endl;
+	int fmt4W = 12, fmt4D = 2;
+	std::vector<ColDesc> vecNames4{ ColDesc("t", 11, 2, 'F'),
+																	ColDesc("L_x", fmt4W, fmt4D, 'F'), ColDesc("L_y", fmt4W, fmt4D, 'F'), ColDesc("L_z", fmt4W, fmt4D, 'F'),
+																	ColDesc("L_x_orig", fmt4W, fmt4D, 'F'), ColDesc("L_y_orig", fmt4W, fmt4D, 'F'), ColDesc("L_z_orig", fmt4W, fmt4D, 'F') };
+
+	Vector<Real> L_x_vals = result.getAngularMomentumCMX();
+	Vector<Real> L_y_vals = result.getAngularMomentumCMY();
+	Vector<Real> L_z_vals = result.getAngularMomentumCMZ();
+
+	Vector<Real> L_x_orig_vals = result.getAngularMomentumX(Vec3Cart(0, 0, 0));
+	Vector<Real> L_y_orig_vals = result.getAngularMomentumY(Vec3Cart(0, 0, 0));
+	Vector<Real> L_z_orig_vals = result.getAngularMomentumZ(Vec3Cart(0, 0, 0));
+
+	std::vector<Vector<Real>*> vecVals4{ &t_vals, &L_x_vals, &L_y_vals, &L_z_vals,
+																			 &L_x_orig_vals, &L_y_orig_vals, &L_z_orig_vals };
+	VerticalVectorPrinter vvp4(vecNames4, vecVals4);
+	vvp4.Print();
+
+	result.VisualizeSolution("gravity_example_3d");
+}
+
+// verify vector and scalar field operations for gravity fields
+void Demo_Field_operations()
+{
+}
+
+// for two given points in space, calculates the potential at those points, 
+// and then calculates the path integral of the force field along a line and a spline curve bdsetween those two points
+void Verify_path_integrals()
+{
+	Real G = 1.0;
+	Real mass = 100.0;
+
+	GravityPotentialField		potentialField(G, mass, Vec3Cart(0, 0, 0));
+	GravityForceField				forceField(G, mass, Vec3Cart(0, 0, 0));
+
+	// our two points in space
+	Vec3Cart point1(10.0, 10.0, -5.0);
+	Vec3Cart point2(-5.0, 5.0, 8.0);
+
+	Real potential1 = potentialField(point1);
+	Real potential2 = potentialField(point2);
+
+	std::cout << "Potential at point 1: " << potential1 << std::endl;
+	std::cout << "Potential at point 2: " << potential2 << std::endl;
+	std::cout << "Difference in potential: " << potential1 - potential2 << std::endl;
+
+	// first, create a line between those two points
+	Curves::LineCurve line(0.0, Pnt3Cart(point1.X(), point1.Y(), point1.Z()),
+		1.0, Pnt3Cart(point2.X(), point2.Y(), point2.Z()));
+
+	Real integral = PathIntegration::LineIntegral(forceField, line, 0.0, 1.0);
+
+	std::cout << "Path integral between point 1 and point 2: " << integral << std::endl;
+
+	// second, we'll create a spline parametric curve between those two points
+	// with some points added in between to make path "curvaceus"
+	Matrix<Real> curve_points1{ 5, 3,
+														 { point1.X(), point1.Y(), point1.Z(),
+															20.0, 5.0, -10.0,
+															100.0, 150.5, -30.0,		// sending it far away
+															5.0, 10.5, 1.0,
+															point2.X(), point2.Y(), point2.Z() }
+	};
+	SplineInterpParametricCurve<3> curve(0.0, 1.0, curve_points1);
+
+	Real integral2 = PathIntegration::LineIntegral(forceField, curve, 0.0, 1.0);
+
+	std::cout << "Path integral along spline curve between point 1 and point 2: " << integral2 << std::endl;
+}
+
+// simulate gravitational slingshot of Voyger 1 by Jupiter
+void Demo_Voyager_Jupiter_Slingshot()
+{
+	// to be implemented
+}
+
+void main()
 {
 	std::cout << "***********************************************************************" << std::endl;
 	std::cout << "****                       EXAMPLE 8 - Gravity                     ****" << std::endl;
 	std::cout << "***********************************************************************" << std::endl;
 
-	Demo_TwoMasses();
-
-	// to je small body simulator, u zadanom polju tijela, koje se gibaju po zadanim putanjama
-
-	// imamo zadane putanje Sunca i svih planeta kao ellipse curve
-
-	// imammo, u prikladnim heliocentricnim koordinatam, i putanju Voyagera 1 i 2 kroz vrijeme
-
-	// CILJ je, na osnovu dane putanje, odsmilurati precizno, kad je Voyager morao paliti motore
-	// odnosno kad je bilo dodatne silen na njega, da bi se zadrzao na putanji
-
-	return 0;
+	Demo_TwoMasses2D();
+	//Demo_Check_Kepler_laws();
+	//Demo_TwoMasses3D();
+	//Demo_Field_operations();
+	//Verify_path_integrals();
+	//Demo_Voyager_Jupiter_Slingshot();
 }
-

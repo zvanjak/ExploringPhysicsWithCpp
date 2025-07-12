@@ -276,6 +276,10 @@ namespace MML
 		}
 	};
 
+	typedef VectorN<Real, 2> Vec2;
+	typedef VectorN<Real, 3> Vec3;
+	typedef VectorN<Real, 4> Vec4;
+
 	typedef VectorN<float, 2> Vec2Flt;
 	typedef VectorN<float, 3> Vec3Flt;
 	typedef VectorN<float, 4> Vec4Flt;

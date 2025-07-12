@@ -274,6 +274,7 @@ namespace MML
 			virtual VectorN<Real, 3> operator()(Real x) const { return _func(x); }
 		};
 
+		// example curves
 		class LineCurve : public ICurveCartesian3D
 		{
 			Line3D  _line;

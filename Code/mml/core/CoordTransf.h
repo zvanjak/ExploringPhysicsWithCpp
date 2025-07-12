@@ -83,7 +83,7 @@ namespace MML
 			return ret;
 		}
 	};
-
+ 
 	template<typename VectorFrom, typename VectorTo, int N>
 	class CoordTransfWithInverse : public virtual CoordTransf<VectorFrom, VectorTo, N>,
 																 public virtual ICoordTransfWithInverse<VectorFrom, VectorTo, N>

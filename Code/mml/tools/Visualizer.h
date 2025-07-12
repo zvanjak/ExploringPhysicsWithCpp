@@ -5,8 +5,8 @@
 
 #include "base/Function.h"
 
-#include "core/ODESystem.h"
-#include "core/ODESystemSolution.h"
+#include "base/ODESystem.h"
+#include "base/ODESystemSolution.h"
 
 #include "tools/Serializer.h"
 
@@ -17,15 +17,15 @@ namespace MML
 	{
 		static inline std::string _pathResultFiles{ MML_PATH_ResultFiles };
 
-		static inline std::string _pathRealFuncViz{ MML_PATH_RealFuncViz };
-		static inline std::string _pathSurfaceViz{ MML_PATH_SurfaceViz };
-		static inline std::string _pathParametricCurve3DViz{ MML_PATH_ParametricCurve3DViz };
-		static inline std::string _pathParametricCurve2DViz{ MML_PATH_ParametricCurve2DViz };
-		static inline std::string _pathVectorField2DViz{ MML_PATH_VectorField2DViz };
-		static inline std::string _pathVectorField3DViz{ MML_PATH_VectorField3DViz };
+		static inline std::string _pathRealFuncViz{ MML_PATH_RealFuncViz_Win };
+		static inline std::string _pathSurfaceViz{ MML_PATH_SurfaceViz_Win };
+		static inline std::string _pathParametricCurve3DViz{ MML_PATH_ParametricCurve3DViz_Win };
+		static inline std::string _pathParametricCurve2DViz{ MML_PATH_ParametricCurve2DViz_Win };
+		static inline std::string _pathVectorField2DViz{ MML_PATH_VectorField2DViz_Win };
+		static inline std::string _pathVectorField3DViz{ MML_PATH_VectorField3DViz_Win };
 
-		static inline std::string _pathParticle2DViz{ MML_PATH_Particle2DViz };
-		static inline std::string _pathParticle3DViz{ MML_PATH_Particle3DViz };
+		static inline std::string _pathParticle2DViz{ MML_PATH_Particle2DViz_Win };
+		static inline std::string _pathParticle3DViz{ MML_PATH_Particle3DViz_Win };
 
 	public:
 		// visualizations of Real function
@@ -36,7 +36,7 @@ namespace MML
 			Serializer::SaveRealFunc(f, title, x1, x2, numPoints, name);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathRealFuncViz + " " + name;
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeRealFunction: Not implemented for this OS" << std::endl;
@@ -49,22 +49,66 @@ namespace MML
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveRealFunc(f, title, points, name);
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathRealFuncViz + " " + name;
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeRealFunction: Not implemented for this OS" << std::endl;
 #endif
 		}
 
+		// visualizations of multiple Real functions
 		static void VisualizeMultiRealFunction(std::vector<IRealFunction*> funcs, std::string title,
 																					 std::vector<std::string> func_legend,
 																					 Real x1, Real x2, int numPoints, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
-			Serializer::SaveRealMultiFunc(funcs, title, x1, x2, numPoints, name);
+			Serializer::SaveRealMultiFunc(funcs, title, func_legend, x1, x2, numPoints, name);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathRealFuncViz + " " + name;
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
+			system(command.c_str());
+#else
+			std::cout << "VisualizeMultiRealFunction: Not implemented for this OS" << std::endl;
+#endif
+		}
+
+		static void VisualizeMultiRealFunction(std::vector<LinearInterpRealFunc> funcs, std::string title,
+																					 std::vector<std::string> func_legend,
+																					 Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::string name = _pathResultFiles + fileName;
+			Serializer::SaveRealMultiFunc(funcs, title, func_legend, x1, x2, numPoints, name);
+
+#if defined(MML_PLATFORM_WINDOWS)
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
+			system(command.c_str());
+#else
+			std::cout << "VisualizeMultiRealFunction: Not implemented for this OS" << std::endl;
+#endif
+		}
+		static void VisualizeMultiRealFunction(std::vector<PolynomInterpRealFunc> funcs, std::string title,
+																					 std::vector<std::string> func_legend,
+																					 Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::string name = _pathResultFiles + fileName;
+			Serializer::SaveRealMultiFunc(funcs, title, func_legend, x1, x2, numPoints, name);
+
+#if defined(MML_PLATFORM_WINDOWS)
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
+			system(command.c_str());
+#else
+			std::cout << "VisualizeMultiRealFunction: Not implemented for this OS" << std::endl;
+#endif
+		}
+		static void VisualizeMultiRealFunction(std::vector<SplineInterpRealFunc> funcs, std::string title,
+																					 std::vector<std::string> func_legend,
+																					 Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::string name = _pathResultFiles + fileName;
+			Serializer::SaveRealMultiFunc(funcs, title, func_legend, x1, x2, numPoints, name);
+
+#if defined(MML_PLATFORM_WINDOWS)
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeMultiRealFunction: Not implemented for this OS" << std::endl;
@@ -75,17 +119,17 @@ namespace MML
 		static void VisualizeScalarFunc2DCartesian(const IScalarFunction<2>& func, std::string title,
 																							 Real x1, Real x2, int numPointsX,
 																							 Real y1, Real y2, int numPointsY, std::string fileName)
-																						{
-																							std::string name = _pathResultFiles + fileName;
-																							Serializer::SaveScalarFunc2DCartesian(func, title, x1, x2, numPointsX, y1, y2, numPointsY, name);
+		{
+			std::string name = _pathResultFiles + fileName;
+			Serializer::SaveScalarFunc2DCartesian(func, title, x1, x2, numPointsX, y1, y2, numPointsY, name);
 
-																				#if defined(MML_PLATFORM_WINDOWS)
-																							std::string command = _pathSurfaceViz + " " + name;
-																							system(command.c_str());
-																				#else
-																							std::cout << "VisualizeScalarFunc2DCartesian: Not implemented for this OS" << std::endl;
-																				#endif
-																						}
+#if defined(MML_PLATFORM_WINDOWS)
+			std::string command = _pathSurfaceViz + " \"" + name + "\"";
+			system(command.c_str());
+#else
+			std::cout << "VisualizeScalarFunc2DCartesian: Not implemented for this OS" << std::endl;
+#endif
+		}
 
 		// visualizations of Vector fields
 		static void VisualizeVectorField2DCartesian(const IVectorFunction<2>& func, std::string title,
@@ -96,7 +140,7 @@ namespace MML
 			Serializer::SaveVectorFunc2DCartesian(func, title, x1, x2, numPointsX, y1, y2, numPointsY, name);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathVectorField2DViz + " " + name;
+			std::string command = _pathVectorField2DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeVectorField2DCartesian: Not implemented for this OS" << std::endl;
@@ -112,7 +156,7 @@ namespace MML
 			Serializer::SaveVectorFunc3DCartesian(func, title, x1, x2, numPointsX, y1, y2, numPointsY, z1, z2, numPointsZ, name, 3.0);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathVectorField3DViz + " " + name;
+			std::string command = _pathVectorField3DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeVectorField3DCartesian: Not implemented for this OS" << std::endl;
@@ -128,7 +172,7 @@ namespace MML
 			Serializer::SaveParamCurveCartesian2D(f, title, t1, t2, numPoints, name);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathParametricCurve2DViz + " " + name;
+			std::string command = _pathParametricCurve2DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeParamCurve3D: Not implemented for this OS" << std::endl;
@@ -149,12 +193,28 @@ namespace MML
 				Serializer::SaveParamCurveCartesian2D(*curve, title, t1, t2, numPoints, name);
 				i++;
 
-				params = params + name + " ";
+				params = params + "\"" + name + "\" ";
 			}
 
 			// then call the visualizer with all the file names
 #if defined(MML_PLATFORM_WINDOWS)
 			std::string command = _pathParametricCurve2DViz + params;
+			system(command.c_str());
+#else
+			std::cout << "VisualizeMultiParamCurve2D: Not implemented for this OS" << std::endl;
+#endif
+		}
+
+		static void VisualizeMultiParamCurve2D(std::vector<std::string> fileNames)
+		{
+			std::string params;
+			for (auto& name : fileNames)
+			{
+				params = params + ("\"" + _pathResultFiles + name + "\" ");
+			}
+
+#if defined(MML_PLATFORM_WINDOWS)
+			std::string command = _pathParametricCurve2DViz + " " + params;
 			system(command.c_str());
 #else
 			std::cout << "VisualizeMultiParamCurve2D: Not implemented for this OS" << std::endl;
@@ -169,7 +229,7 @@ namespace MML
 			Serializer::SaveParamCurveCartesian3D(f, title, t1, t2, numPoints, name);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathParametricCurve3DViz + " " + name;
+			std::string command = _pathParametricCurve3DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeParamCurve3D: Not implemented for this OS" << std::endl;
@@ -189,7 +249,7 @@ namespace MML
 				std::string name = _pathResultFiles + fileName + "_" + std::to_string(i + 1);
 				Serializer::SaveParamCurveCartesian3D(*curve, title, t1, t2, numPoints, name);
 				i++;
-				params = params + name + " ";
+				params = params + "\"" + name + "\" ";
 			}
 			// then call the visualizer with all the file names
 #if defined(MML_PLATFORM_WINDOWS)
@@ -205,7 +265,7 @@ namespace MML
 			std::string params;
 			for (auto& name : fileNames)
 			{
-				params = params + (_pathResultFiles + name + " ");
+				params = params + ("\"" + _pathResultFiles + name + "\" ");
 			}
 
 #if defined(MML_PLATFORM_WINDOWS)
@@ -223,8 +283,9 @@ namespace MML
 		{
 			std::string name = _pathResultFiles + fileName;
 			Serializer::SaveODESolutionComponentAsFunc(sol, compInd, title, name);
+
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathRealFuncViz + " " + name;
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeODESysSolCompAsFunc: Not implemented for this OS" << std::endl;
@@ -233,13 +294,13 @@ namespace MML
 
 		// Visualizing ODE system solution as a multi-function (all variables)
 		static void VisualizeODESysSolAsMultiFunc(const ODESystemSolution& sol,
-																							std::string title, std::string fileName)
+																							std::string title, std::vector<std::string> legend, std::string fileName)
 		{
 			std::string name = _pathResultFiles + fileName;
-			Serializer::SaveODESolutionAsMultiFunc(sol, title, name);
+			Serializer::SaveODESolutionAsMultiFunc(sol, title, legend, name);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathRealFuncViz + " " + name;
+			std::string command = _pathRealFuncViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeODESysSolAsMultiFunc: Not implemented for this OS" << std::endl;
@@ -255,7 +316,7 @@ namespace MML
 			Serializer::SaveODESolAsParametricCurve2D(sol, name, ind1, ind2, title);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathParametricCurve2DViz + " " + name;
+			std::string command = _pathParametricCurve2DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeODESysSolAsParamCurve2: Not implemented for this OS" << std::endl;
@@ -271,7 +332,7 @@ namespace MML
 			Serializer::SaveODESolAsParametricCurve3D(sol, name, ind1, ind2, ind3, title);
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathParametricCurve3DViz + " " + name;
+			std::string command = _pathParametricCurve3DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeODESysSolAsParamCurve3: Not implemented for this OS" << std::endl;
@@ -284,7 +345,7 @@ namespace MML
 			std::string name = _pathResultFiles + fileName;
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathParticle2DViz + " " + name;
+			std::string command = _pathParticle2DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeParticleSimulation2D: Not implemented for this OS" << std::endl;
@@ -296,7 +357,7 @@ namespace MML
 			std::string name = _pathResultFiles + fileName;
 
 #if defined(MML_PLATFORM_WINDOWS)
-			std::string command = _pathParticle3DViz + " " + name;
+			std::string command = _pathParticle3DViz + " \"" + name + "\"";
 			system(command.c_str());
 #else
 			std::cout << "VisualizeParticleSimulation3D: Not implemented for this OS" << std::endl;

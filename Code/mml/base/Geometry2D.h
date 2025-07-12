@@ -107,6 +107,19 @@ namespace MML
 
 			return sqrt(s * (s - a) * (s - b) * (s - c));
 		}
+
+		bool IsRight() const
+		{
+			return (hypot(A(), B()) == C() || hypot(A(), C()) == B() || hypot(B(), C()) == A());
+		}
+		bool IsIsosceles() const		// two sides are the same length
+		{
+			return (A() == B()) || (A() == C()) || (B() == C());
+		}
+		bool IsEquilateral() const	// all sides are the same length
+		{
+			return (A() == B()) && (A() == C());
+		}
 	};
 
 	class Polygon2D

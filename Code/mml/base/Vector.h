@@ -20,7 +20,8 @@ namespace MML
 			if(n < 0)
 				throw VectorInitializationError("Vector::Vector - negative size", n);
 
-			_elems.resize(n, {0});
+			// TODO - check if Type is numeric and only then initialize to 0.0!
+			_elems.resize(n, Type{ 0 });
 		}
 		explicit Vector(int n, const Type &val) {
 			if (n < 0)
@@ -57,10 +58,27 @@ namespace MML
 		Vector& operator=(Vector&& b) = default;
 
 		////////////////            std::vector forwarding                 ////////////////////
-		int  size()  const { return (int)_elems.size(); }
-		bool isEmpty() const { return _elems.empty(); }
+		int  size()			const { return (int)_elems.size(); }
+		bool isEmpty()	const { return _elems.empty(); }
 
-		void Clear()						{ _elems.clear(); }
+    auto begin()	noexcept { return _elems.begin(); }
+    auto end()		noexcept { return _elems.end(); }
+    auto begin()	const noexcept { return _elems.begin(); }
+    auto end()		const noexcept { return _elems.end(); }
+    auto cbegin() const noexcept { return _elems.cbegin(); }
+    auto cend()		const noexcept { return _elems.cend(); }
+
+		void push_back(const Type& val) { _elems.push_back(val); }
+		void push_back(Type&& val)			{ _elems.push_back(std::move(val)); }
+		
+		void insert(int pos, const Type& val) { _elems.insert(_elems.begin() + pos, val); }
+		void insert(int pos, Type&& val) { _elems.insert(_elems.begin() + pos, std::move(val)); }
+		
+		void erase(int pos)							{ _elems.erase(_elems.begin() + pos); }
+		void erase(int start, int end)	{ _elems.erase(_elems.begin() + start, _elems.begin() + end); }
+		void erase(const Type& val)			{ _elems.erase(std::remove(_elems.begin(), _elems.end(), val), _elems.end()); }
+
+		void Clear()	{ _elems.clear(); }
 		void Resize(int newLen, bool preserveElements = false)	
 		{ 
 			if (preserveElements == true)
@@ -142,7 +160,7 @@ namespace MML
 			return *this;
 		}
 
-		Vector  operator*(Type b)
+		Vector  operator*(Type b) const
 		{
 			Vector ret(size());;
 			for (int i = 0; i < size(); i++)
@@ -155,7 +173,7 @@ namespace MML
 				_elems[i] *= b;
 			return *this;
 		}
-		Vector  operator/(Type b)
+		Vector  operator/(Type b) const
 		{
 			Vector ret(size());
 			for (int i = 0; i < size(); i++)

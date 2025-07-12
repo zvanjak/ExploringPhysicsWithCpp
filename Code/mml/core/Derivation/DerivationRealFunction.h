@@ -450,9 +450,9 @@ namespace MML
 		static inline Real(*DeriveErr)(const IRealFunction& f, 
 																	 Real x, Real* error) = Derivation::NDer4;
 		static inline Real(*DeriveSec)(const IRealFunction& f, 
-																	 Real x, Real* error) = Derivation::NSecDer4;
+																	 Real x, Real* error) = Derivation::NSecDer2;
 		static inline Real(*DeriveThird)(const IRealFunction& f, 
-																		 Real x, Real* error) = Derivation::NThirdDer2;
+																		 Real x, Real* error) = Derivation::NThirdDer1;
 	}
 }
 

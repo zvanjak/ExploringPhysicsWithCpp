@@ -226,6 +226,21 @@ namespace MML
 			return ret;
 		}
 
+		static Vector<Complex> MulVec(const Complex& a, const Vector<Real>& b)
+		{
+			Vector<Complex> ret(b.size());;
+			for (int i = 0; i < b.size(); i++)
+				ret[i] = a * b[i];
+			return ret;
+		}
+		static Vector<Complex> MulVec(const Vector<Real>& a, const Complex& b)
+		{
+			Vector<Complex> ret(a.size());;
+			for (int i = 0; i < a.size(); i++)
+				ret[i] = b * a[i];
+			return ret;
+		}
+
 		///////////////////             Predefined matrices                      ///////////////////
 		const static inline MatrixNM<Complex, 2, 2> Pauli[] = {
 				MatrixNM<Complex, 2, 2>{ 0, 1,

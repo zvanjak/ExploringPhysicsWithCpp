@@ -138,11 +138,13 @@ namespace MML
 		Vector<Real> _params;
 		VectorN<Real, N>(*_func)(Real);
 	public:
-		ParametricCurveParametrized(VectorN<Real, N>(*inFunc)(Real), int numParams) : _func(inFunc), _minT(Constants::NegInf), _maxT(Constants::PosInf) 
+		ParametricCurveParametrized(VectorN<Real, N>(*inFunc)(Real), int numParams) 
+				: _func(inFunc), _minT(Constants::NegInf), _maxT(Constants::PosInf) 
 		{
 			_params.Resize(numParams);
 		}
-		ParametricCurveParametrized(Real minT, Real maxT, VectorN<Real, N>(*inFunc)(Real), int numParams) : _func(inFunc), _params(numParams), _minT(minT), _maxT(maxT) {}
+		ParametricCurveParametrized(Real minT, Real maxT, VectorN<Real, N>(*inFunc)(Real), int numParams) 
+				: _func(inFunc), _params(numParams), _minT(minT), _maxT(maxT) {}
 
 		Real getMinT() const { return _minT; }
 		Real getMaxT() const { return _maxT; }
@@ -158,12 +160,11 @@ namespace MML
 			_params = params;
 			return _func(t);
 		}
-
 	};
 
 	/////////////////////       PARAMETRIC SURFACE         //////////////////////////////////
 	template<int N>
-	class ParametricSurface : public IParametricSurfaceRect<N>
+	class ParametricSurfaceRect : public IParametricSurfaceRect<N>
 	{
 		// TODO - ensure that N is at least 3!!!
 		Real _minX;
@@ -173,8 +174,11 @@ namespace MML
 		VectorN<Real, N>(*_func)(Real u, Real w);
 
 	public:
-		ParametricSurface(VectorN<Real, N>(*inFunc)(Real u, Real w)) : _func(inFunc), _minX(Constants::NegInf), _maxX(Constants::PosInf), _minY(Constants::NegInf), _maxY(Constants::PosInf) {}
-		ParametricSurface(VectorN<Real, N>(*inFunc)(Real u, Real w), Real minX, Real maxX, Real minY, Real maxY) : _func(inFunc), _minX(minX), _maxX(maxX), _minY(minY), _maxY(maxY) {}
+		ParametricSurfaceRect(VectorN<Real, N>(*inFunc)(Real u, Real w)) 
+				: _func(inFunc), _minX(Constants::NegInf), _maxX(Constants::PosInf), 
+					_minY(Constants::NegInf), _maxY(Constants::PosInf) {}
+		ParametricSurfaceRect(VectorN<Real, N>(*inFunc)(Real u, Real w), Real minX, Real maxX, Real minY, Real maxY) 
+				: _func(inFunc), _minX(minX), _maxX(maxX), _minY(minY), _maxY(maxY) {}
 
 		VectorN<Real, N> operator()(Real u, Real w) const { return _func(u, w); }
 

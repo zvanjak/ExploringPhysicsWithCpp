@@ -12,6 +12,15 @@ namespace MML
 	public:
 		virtual int   getDim() const = 0;
 		virtual void  derivs(const Real t, const Vector<Real> &x, Vector<Real> &dxdt) const = 0;
+
+		// overridable function for providing variable names
+		virtual std::string getVarName(int ind) const
+		{
+			if (ind < 0 || ind >= getDim())
+				return "var" + std::to_string(ind);
+
+			return "var" + std::to_string(ind + 1); // 1-based index 
+		}
 	};
 
 	class IODESystemParametrized : public IODESystem

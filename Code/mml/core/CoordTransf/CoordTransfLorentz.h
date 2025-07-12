@@ -37,6 +37,9 @@ namespace MML
 			_fInv3(std::function<Real(const VectorN<Real, 4>&)> { std::bind(&CoordTransfLorentzXAxis::funcInverse3, this, std::placeholders::_1) }),
 			_fInv4(std::function<Real(const VectorN<Real, 4>&)> { std::bind(&CoordTransfLorentzXAxis::funcInverse4, this, std::placeholders::_1) })
 		{
+			if (_velocity < 0.0 || _velocity >= 1.0)
+				throw std::range_error("Invalid velocity for Lorentz transformation: must be in [0, 1).");
+
 			double gamma = 1.0 / sqrt(1.0 - _velocity * _velocity);
 			double beta = _velocity;
 

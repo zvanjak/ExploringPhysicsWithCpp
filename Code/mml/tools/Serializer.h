@@ -5,7 +5,7 @@
 
 #include "base/Function.h"
 
-#include "core/ODESystemSolution.h"
+#include "base/ODESystemSolution.h"
 
 namespace MML
 {
@@ -60,40 +60,9 @@ namespace MML
 			return true;
 		}
 
-		// serializing multiple functions in a single files
-		static bool SaveRealMultiFunc(std::vector<IRealFunction*> funcs, std::string title,
-																	Real x1, Real x2, int numPoints, std::string fileName)
-		{
-			std::ofstream file(fileName);
-			if (!file.is_open())
-				return false;
-
-			file << "MULTI_REAL_FUNCTION" << std::endl;
-
-			file << title << std::endl;
-			file << funcs.size() << std::endl;
-			file << "x1: " << x1 << std::endl;
-			file << "x2: " << x2 << std::endl;
-			file << "NumPoints: " << numPoints << std::endl;
-
-			for (int i = 0; i < numPoints; i++)
-			{
-				double x = x1 + (x2 - x1) * i / (numPoints - 1);
-				file << x << " ";
-				for (int j = 0; j < funcs.size(); j++)
-				{
-					file << (*funcs[j])(x) << " ";
-				}
-				file << std::endl;
-			}
-
-			file.close();
-			return true;
-		}
-
 		// same as SaveRealFunc, but points are not explicitly written in file
-		// (as they can be calculated fomr x1, x2 and numPoints)
-		static bool SaveRealFuncEquallySpaced(const IRealFunction& f, std::string title, 
+		// (as they can be calculated from x1, x2 and numPoints)
+		static bool SaveRealFuncEquallySpaced(const IRealFunction& f, std::string title,
 																					Real x1, Real x2, int numPoints, std::string fileName)
 		{
 			std::ofstream file(fileName);
@@ -111,6 +80,121 @@ namespace MML
 			{
 				Real x = x1 + i * step;
 				file << f(x) << std::endl;
+			}
+			file.close();
+			return true;
+		}
+
+		// serializing multiple functions in a single files
+		static bool WriteRealMultiFuncHeader(std::ofstream& file, std::string title, int numFuncs,
+																				 std::vector<std::string> legend, Real x1, Real x2, int numPoints)
+		{
+			if (!file.is_open())
+				return false;
+
+			file << "MULTI_REAL_FUNCTION" << std::endl;
+
+			file << title << std::endl;
+			file << numFuncs << std::endl;
+			for (int i = 0; i < numFuncs; i++)
+				file << legend[i] << std::endl;
+
+			file << "x1: " << x1 << std::endl;
+			file << "x2: " << x2 << std::endl;
+			file << "NumPoints: " << numPoints << std::endl;
+
+			return true;
+		}
+
+		static bool SaveRealMultiFunc(const std::vector<IRealFunction*> &funcs, std::string title,
+																	std::vector<std::string> legend, 
+																	Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::ofstream file(fileName);
+			if (!file.is_open())
+				return false;
+
+			WriteRealMultiFuncHeader(file, title, funcs.size(), legend, x1, x2, numPoints);
+
+			for (int i = 0; i < numPoints; i++)
+			{
+				double x = x1 + (x2 - x1) * i / (numPoints - 1);
+				file << x << " ";
+
+				for (int j = 0; j < funcs.size(); j++)
+					file << (*(funcs[j]))(x) << " ";
+
+				file << std::endl;
+			}
+			file.close();
+			return true;
+		}
+
+		static bool SaveRealMultiFunc(const std::vector<LinearInterpRealFunc>& funcs, std::string title,
+																	std::vector<std::string> legend,
+																	Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::ofstream file(fileName);
+			if (!file.is_open())
+				return false;
+
+			WriteRealMultiFuncHeader(file, title, funcs.size(), legend, x1, x2, numPoints);
+
+			for (int i = 0; i < numPoints; i++)
+			{
+				double x = x1 + (x2 - x1) * i / (numPoints - 1);
+				file << x << " ";
+
+				for (int j = 0; j < funcs.size(); j++)
+					file << funcs[j](x) << " ";
+
+				file << std::endl;
+			}
+			file.close();
+			return true;
+		}
+		static bool SaveRealMultiFunc(const std::vector<PolynomInterpRealFunc>& funcs, std::string title,
+																	std::vector<std::string> legend,
+																	Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::ofstream file(fileName);
+			if (!file.is_open())
+				return false;
+
+			WriteRealMultiFuncHeader(file, title, funcs.size(), legend, x1, x2, numPoints);
+
+			for (int i = 0; i < numPoints; i++)
+			{
+				double x = x1 + (x2 - x1) * i / (numPoints - 1);
+				file << x << " ";
+
+				for (int j = 0; j < funcs.size(); j++)
+					file << funcs[j](x) << " ";
+
+				file << std::endl;
+			}
+			file.close();
+			return true;
+		}
+		static bool SaveRealMultiFunc(const std::vector<SplineInterpRealFunc>& funcs, std::string title,
+																	std::vector<std::string> legend,
+																	Real x1, Real x2, int numPoints, std::string fileName)
+		{
+			std::ofstream file(fileName);
+			if (!file.is_open())
+				return false;
+
+			WriteRealMultiFuncHeader(file, title, funcs.size(), legend, x1, x2, numPoints);
+
+			for (int i = 0; i < numPoints; i++)
+			{
+				double x = x1 + (x2 - x1) * i / (numPoints - 1);
+				file << x << " ";
+
+				for (int j = 0; j < funcs.size(); j++)
+					file << funcs[j](x) << " ";
+
+				file << std::endl;
 			}
 			file.close();
 			return true;
@@ -500,19 +584,13 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveODESolutionAsMultiFunc(const ODESystemSolution& sol, std::string title, std::string fileName)
+		static bool SaveODESolutionAsMultiFunc(const ODESystemSolution& sol, std::string title, std::vector<std::string> legend, std::string fileName)
 		{
 			std::ofstream file(fileName);
 			if (!file.is_open())
 				return false;
 
-			file << "MULTI_REAL_FUNCTION" << std::endl;
-
-			file << title << std::endl;
-			file << sol.getSysDym() << std::endl;
-			file << "x1: " << sol.getT1() << std::endl;
-			file << "x2: " << sol.getT2() << std::endl;
-			file << "NumPoints: " << sol.getTotalSavedSteps() << std::endl;
+			WriteRealMultiFuncHeader(file, title, sol.getSysDym(), legend, sol.getT1(), sol.getT2(), sol.getTotalSavedSteps());
 
 			for (int i = 0; i < sol.getTotalSavedSteps(); i++)
 			{
@@ -581,32 +659,38 @@ namespace MML
 		}
 
 		// particle simulation serialization
-		static bool SaveParticleSimulation2D(std::string fileName, int numBalls, 
+		static bool SaveParticleSimulation2D(std::string fileName, int numBalls, double width, double height,
 																				 std::vector<std::vector<Pnt2Cart>> ballPositions, 
-																				 std::vector<std::string> ballColors, std::vector<double> ballRadius )
+																				 std::vector<std::string> ballColors, std::vector<double> ballRadius,
+																				 double dT, int saveEveryNSteps = 1)
 		{
 			std::ofstream file(fileName);
 			if (file.is_open())
 			{
-				file << "PARTICLE_SIMULATION_DATA_2D" << std::endl;
-				file << "NumBalls: " << numBalls << std::endl;
+				std::ostringstream buffer;
+				buffer << "PARTICLE_SIMULATION_DATA_2D\n";
+				buffer << "Width: " << width << "\n";
+				buffer << "Height: " << height << "\n";
+				buffer << "NumBalls: " << numBalls << "\n";
 
 				for (int i=0; i<numBalls; i++)
 				{
-					file << "Ball_" << " " << ballColors[i] << " " << ballRadius[i] << std::endl;
+					buffer << "Ball_" << i + 1 << " " << ballColors[i] << " " << ballRadius[i] << std::endl;
 				}
 
-				int numSteps = ballPositions[0].size();
-				file << "NumSteps: " << numSteps << std::endl;
+				int numSteps = ballPositions[0].size() ;
+				buffer << "NumSteps: " << numSteps / saveEveryNSteps << std::endl;
 
-				for (int i = 0; i < numSteps; i++)
+				int realStep = 0;
+				for (int i = 0; i < numSteps; i+=saveEveryNSteps, realStep++)
 				{
-					file << "Step " << i << " 0.1" << std::endl;
+					buffer << "Step " << realStep << " " << i * dT << std::endl;
 					for (int j = 0; j < numBalls; j++)
 					{
-						file << j << " " << ballPositions[j][i].X() << " " << ballPositions[j][i].Y() << "\n";
+						buffer << j << " " << ballPositions[j][i].X() << " " << ballPositions[j][i].Y() << "\n";
 					}
 				}
+				file << buffer.str();
 				file.close();
 			}
 			else
@@ -617,14 +701,18 @@ namespace MML
 			return true;
 		}
 
-		static bool SaveParticleSimulation3D(std::string fileName, int numBalls, 
+		static bool SaveParticleSimulation3D(std::string fileName, int numBalls, double width, double height, double depth,
 																				 std::vector<std::vector<Pnt3Cart>> ballPositions,
-																				 std::vector<std::string> ballColors, std::vector<double> ballRadius)
+																				 std::vector<std::string> ballColors, std::vector<double> ballRadius,
+																				 double dT, int saveEveryNSteps = 1)
 		{
 			std::ofstream file(fileName);
 			if (file.is_open())
 			{
 				file << "PARTICLE_SIMULATION_DATA_3D" << std::endl;
+				file << "Width: "    << width << std::endl;
+				file << "Height: "   << height << std::endl;
+				file << "Depth: "    << depth << std::endl;
 				file << "NumBalls: " << numBalls << std::endl;
 
 				for (int i = 0; i < numBalls; i++)
@@ -637,7 +725,7 @@ namespace MML
 
 				for (int i = 0; i < numSteps; i++)
 				{
-					file << "Step " << i << " 0.1" << std::endl;
+					file << "Step " << i << " " << i * dT << std::endl;
 					for (int j = 0; j < numBalls; j++)
 					{
 						file << j << " " << ballPositions[j][i].X() << " " << ballPositions[j][i].Y() << " " << ballPositions[j][i].Z() << "\n";

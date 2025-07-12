@@ -14,8 +14,8 @@ namespace MML
 	{
 	public:
 		virtual void calcStep(const IODESystem& odeSystem, 
-													const Real x, const Vector<Real>& y_start, const Vector<Real>& dydx,
-													const Real h, Vector<Real>& yout, Vector<Real>& yerr) const = 0;
+													const Real t, const Vector<Real>& x_start, const Vector<Real>& dxdt,
+													const Real h, Vector<Real>& xout, Vector<Real>& xerr) const = 0;
 	};
 }
 #endif

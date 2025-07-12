@@ -28,6 +28,39 @@ namespace MML
 					else
 						_vals[i][j] = 0.0;
 		}
+		// Constructor that takes an initializer_list of initializer_lists for row-wise initialization
+		MatrixNM(std::initializer_list<std::initializer_list<Type>> rows)
+		{
+			size_t i = 0;
+			for (auto rowIt = rows.begin(); rowIt != rows.end() && i < N; ++rowIt, ++i) {
+				size_t j = 0;
+				for (auto colIt = rowIt->begin(); colIt != rowIt->end() && j < M; ++colIt, ++j) {
+					_vals[i][j] = *colIt;
+				}
+				// Fill remaining columns with zero if not enough elements
+				for (; j < M; ++j) {
+					_vals[i][j] = Type{ 0 };
+				}
+			}
+			// Fill remaining rows with zero if not enough rows
+			for (; i < N; ++i) {
+				for (size_t j = 0; j < M; ++j) {
+					_vals[i][j] = Type{ 0 };
+				}
+			}
+		}
+		// Constructor from flat array
+		MatrixNM(const Type* arr, size_t len) {
+			size_t idx = 0;
+			for (size_t i = 0; i < RowNum(); ++i) {
+				for (size_t j = 0; j < ColNum(); ++j) {
+					if (idx < len)
+						_vals[i][j] = arr[idx++];
+					else
+						_vals[i][j] = Type{ 0 };
+				}
+			}
+		}
 		MatrixNM(const MatrixNM& m)
 		{
 			for (size_t i = 0; i < RowNum(); ++i)
@@ -157,10 +190,10 @@ namespace MML
 
 		////////////////////            Access operators             ///////////////////////
 		inline const Type* operator[](int i)  const { return _vals[i]; }
-		inline Type*			 operator[](int i)			  { return _vals[i]; }
+		inline Type* operator[](int i) { return _vals[i]; }
 
 		inline Type  operator()(int i, int j) const { return _vals[i][j]; }
-		inline Type& operator()(int i, int j)				{ return _vals[i][j]; }
+		inline Type& operator()(int i, int j) { return _vals[i][j]; }
 
 		// version with checking bounds
 		Type  ElemAt(int i, int j) const
@@ -203,7 +236,7 @@ namespace MML
 					temp._vals[i][j] = _vals[i][j] - b._vals[i][j];
 			return temp;
 		}
-		
+
 		template<int K>
 		MatrixNM<Type, N, K>  operator*(const MatrixNM<Type, M, K>& b) const
 		{
@@ -231,7 +264,7 @@ namespace MML
 
 			return ret;
 		}
-		MatrixNM& operator*=(const Type &b)
+		MatrixNM& operator*=(const Type& b)
 		{
 			int	i, j;
 
@@ -252,7 +285,7 @@ namespace MML
 
 			return ret;
 		}
-		
+
 		VectorN<Type, N> operator*(const VectorN<Type, M>& b) const
 		{
 			int	i, j;

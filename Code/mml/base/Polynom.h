@@ -11,63 +11,78 @@
 
 namespace MML
 {
-	template <typename _Field>
+	template <typename CoefT, typename FieldT = CoefT>
 	class Polynom
 	{
 	protected:
 		// polynom coefficients - with _vecCoef[0] being the constant term
-		std::vector<Real> _vecCoef;
+		std::vector<CoefT> _vecCoef;
 	public:
 		Polynom() {}
 		Polynom(int n) { _vecCoef.resize(n + 1); }
 		Polynom(const std::vector<Real>& vecCoef) : _vecCoef(vecCoef) {}
-		Polynom(std::initializer_list<Real> list) : _vecCoef(list) {}
+		Polynom(std::initializer_list<CoefT> list) : _vecCoef(list) {}
 		Polynom(const Polynom& Copy) = default;
 
-		Polynom& operator=(const Polynom& Copy) { _vecCoef = Copy._vecCoef; return *this; }
+		Polynom(Polynom&&) noexcept = default;
+		Polynom& operator=(Polynom&&) noexcept = default;
+
+		// Static constructors for common polynomials
+		// Returns the zero polynomial (all coefficients zero)
+		static Polynom Zero() {
+			return Polynom(std::initializer_list<CoefT>{CoefT(0)});
+		}
+
+		// Returns the monomial x^degree (coefficient 1 at degree, 0 elsewhere)
+		static Polynom Monomial(int degree) {
+			std::vector<CoefT> coef(degree + 1, CoefT(0));
+			if (degree >= 0) coef[degree] = CoefT(1);
+			return Polynom(coef);
+		}
+
+		// Returns the constant polynomial (all coefficients zero except constant term)
+		static Polynom Constant(const CoefT& value) {
+			return Polynom(std::initializer_list<CoefT>{value});
+		}
+
+		// Returns the linear polynomial a*x + b
+		static Polynom Linear(const CoefT& a, const CoefT& b) {
+			return Polynom(std::initializer_list<CoefT>{b, a});
+		}
 
 		int  GetDegree() const { return (int)_vecCoef.size() - 1; }
 		void SetDegree(int newDeg) { _vecCoef.resize(newDeg + 1); }
 		bool IsNullPolynom() const { return _vecCoef.size() == 0; }
+		void Reduce() { while (!_vecCoef.empty() && _vecCoef.back() == CoefT(0)) _vecCoef.pop_back(); }
+
+		CoefT leadingTerm() const { return _vecCoef.empty() ? CoefT(0) : _vecCoef.back(); }
+		CoefT constantTerm() const { return _vecCoef.empty() ? CoefT(0) : _vecCoef[0]; }
 
 		Real  operator[] (int i) const { return _vecCoef[i]; }
 		Real& operator[] (int i) { return _vecCoef[i]; }
 
-		_Field operator() (const _Field& x) const {
+		///////////////////////////            Iterators              ///////////////////////////
+
+		using iterator = typename std::vector<CoefT>::iterator;
+		using const_iterator = typename std::vector<CoefT>::const_iterator;
+
+		iterator begin() { return _vecCoef.begin(); }
+		iterator end() { return _vecCoef.end(); }
+		const_iterator begin() const { return _vecCoef.begin(); }
+		const_iterator end() const { return _vecCoef.end(); }
+		const_iterator cbegin() const { return _vecCoef.cbegin(); }
+		const_iterator cend() const { return _vecCoef.cend(); }
+
+		///////////////////////////            Operators              ///////////////////////////
+		Polynom& operator=(const Polynom& Copy) { _vecCoef = Copy._vecCoef; return *this; }
+
+		FieldT operator() (const FieldT& x) const {
 			int j = GetDegree();
-			_Field p = _vecCoef[j] * _Field(1);
+			FieldT p = _vecCoef[j] * FieldT(1);
 
 			while (j > 0)
 				p = p * x + _vecCoef[--j];
 			return p;
-		}
-		// Given the coefficients of a polynomial of degree nc as an array c[0..nc] of size nc+1 (with
-		// c[0] being the constant term), and given a value x, this routine fills an output array pd of size
-		// nd+1 with the value of the polynomial evaluated at x in pd[0], and the first nd derivatives at
-		// x in pd[1..nd].
-		void Derive(const Real x, Vector<Real>& pd)
-		{
-			int  nnd, j, i;
-			int  nc = GetDegree();
-			int  nd = pd.size() - 1;
-			Real cnst = 1.0;
-
-			pd[0] = (*this)[nc];
-			for (j = 1; j < nd + 1; j++)
-				pd[j] = 0.0;
-
-			for (i = nc - 1; i >= 0; i--)
-			{
-				nnd = (nd < (nc - i) ? nd : nc - i);
-				for (j = nnd; j > 0; j--)
-					pd[j] = pd[j] * x + pd[j - 1];
-
-				pd[0] = pd[0] * x + (*this)[i];
-			}
-			for (i = 2; i < nd + 1; i++) {
-				cnst *= i;
-				pd[i] *= cnst;
-			}
 		}
 
 		bool IsEqual(const Polynom& b) const
@@ -134,6 +149,53 @@ namespace MML
 			return result;
 		}
 
+		// Addition by scalar (adds scalar to the constant term)
+		Polynom operator+(const CoefT& scalar) const {
+			Polynom result = *this;
+			if (result._vecCoef.empty())
+				result._vecCoef.resize(1, CoefT(0));
+			result._vecCoef[0] += scalar;
+			return result;
+		}
+		friend Polynom operator+(const CoefT& scalar, const Polynom& poly) {
+			return poly + scalar;
+		}
+
+		// Subtraction by scalar (subtracts scalar from the constant term)
+		Polynom operator-(const CoefT& scalar) const {
+			Polynom result = *this;
+			if (result._vecCoef.empty())
+				result._vecCoef.resize(1, CoefT(0));
+			result._vecCoef[0] -= scalar;
+			return result;
+		}
+		friend Polynom operator-(const CoefT& scalar, const Polynom& poly) {
+			Polynom result = -poly;
+			if (result._vecCoef.empty())
+				result._vecCoef.resize(1, CoefT(0));
+			result._vecCoef[0] += scalar;
+			return result;
+		}
+
+		// Multiplication by scalar
+		Polynom operator*(const CoefT& scalar) const {
+			Polynom result = *this;
+			for (auto& coef : result._vecCoef)
+				coef *= scalar;
+			return result;
+		}
+		friend Polynom operator*(const CoefT& scalar, const Polynom& poly) {
+			return poly * scalar;
+		}
+
+		// Division by scalar
+		Polynom operator/(const CoefT& scalar) const {
+			Polynom result = *this;
+			for (auto& coef : result._vecCoef)
+				coef /= scalar;
+			return result;
+		}
+
 		static void poldiv(const Polynom& u, const Polynom& v, Polynom& qout, Polynom& rout)
 		{
 			int k, j, n = u.GetDegree(), nv = v.GetDegree();
@@ -173,31 +235,61 @@ namespace MML
 				rout[j] = r[j];
 		}
 
-		friend Polynom operator*(const Polynom& a, Real b)
+		///////////////////////////           Operations              ///////////////////////////
+		// Given the coefficients of a polynomial of degree nc as an array c[0..nc] of size nc+1 (with
+		// c[0] being the constant term), and given a value x, this routine fills an output array pd of size
+		// nd+1 with the value of the polynomial evaluated at x in pd[0], and the first nd derivatives at
+		// x in pd[1..nd].
+		void Derive(const Real x, Vector<Real>& pd)
 		{
-			Polynom ret;
-			ret._vecCoef.resize(a.GetDegree() + 1);
-			for (int i = 0; i <= a.GetDegree(); i++)
-				ret._vecCoef[i] = a._vecCoef[i] * b;
-			return ret;
+			int  nnd, j, i;
+			int  nc = GetDegree();
+			int  nd = pd.size() - 1;
+			Real cnst = 1.0;
+
+			pd[0] = (*this)[nc];
+			for (j = 1; j < nd + 1; j++)
+				pd[j] = 0.0;
+
+			for (i = nc - 1; i >= 0; i--)
+			{
+				nnd = (nd < (nc - i) ? nd : nc - i);
+				for (j = nnd; j > 0; j--)
+					pd[j] = pd[j] * x + pd[j - 1];
+
+				pd[0] = pd[0] * x + (*this)[i];
+			}
+			for (i = 2; i < nd + 1; i++) {
+				cnst *= i;
+				pd[i] *= cnst;
+			}
 		}
 
-		friend Polynom operator*(Real a, const Polynom& b)
-		{
-			Polynom ret;
-			ret._vecCoef.resize(b.GetDegree() + 1);
-			for (int i = 0; i <= b.GetDegree(); i++)
-				ret._vecCoef[i] = a * b._vecCoef[i];
-			return ret;
+		// Returns the first derivative of the polynomial as a new Polynom
+		Polynom Derive() const {
+			Polynom result;
+			int deg = GetDegree();
+			if (deg <= 0) {
+				result._vecCoef.clear();
+				return result;
+			}
+			result._vecCoef.resize(deg);
+			for (int i = 1; i <= deg; ++i) {
+				result._vecCoef[i - 1] = _vecCoef[i] * CoefT(i);
+			}
+			return result;
 		}
 
-		friend Polynom operator/(const Polynom& a, Real b)
-		{
-			Polynom ret;
-			ret._vecCoef.resize(a.GetDegree() + 1);
-			for (int i = 0; i <= a.GetDegree(); i++)
-				ret._vecCoef[i] = a._vecCoef[i] / b;
-			return ret;
+		// Returns the indefinite integral of the polynomial as a new Polynom.
+		// The constant of integration is set to zero.
+		Polynom Integrate() const {
+			Polynom result;
+			int deg = GetDegree();
+			result._vecCoef.resize(deg + 2, CoefT(0));
+			for (int i = 0; i <= deg; ++i) {
+				result._vecCoef[i + 1] = _vecCoef[i] / CoefT(i + 1);
+			}
+			return result;
 		}
 
 		///////////////////////////               I/O                 ///////////////////////////
@@ -210,118 +302,101 @@ namespace MML
 			return str.str();
 		}
 
-		std::ostream& Print(std::ostream& stream, int width, int precision) const
-		{
-			// first, save current stream state
-			std::ios_base::fmtflags f(stream.flags());
-
-			// change formatting
-			stream << std::fixed << std::setw(width) << std::setprecision(precision);
-
-			// print the polynomial
-			Print(stream);
-
-			// restore stream state
-			stream.flags(f);
-
-			return stream;
-		}
-
 		std::ostream& Print(std::ostream& stream) const
 		{
-			for (int i = (int)_vecCoef.size() - 1; i >= 0; i--)
+			return Print(stream, 10, 6); // Default width and precision
+		}
+
+		std::ostream& Print(std::ostream& stream, int width, int precision) const
+		{
+			using std::abs;
+			using std::to_string;
+
+			std::ios_base::fmtflags f(stream.flags());
+			stream << std::fixed << std::setw(width) << std::setprecision(precision);
+
+			bool first = true;
+			for (int i = (int)_vecCoef.size() - 1; i >= 0; --i)
 			{
-				if (std::abs(_vecCoef[i]) == 0.0)
-					continue;
-
-				// handling first term
-				if (i == _vecCoef.size() - 1)
-				{
-					if (i == 0) // means we have only constant term
-					{
-						stream << _vecCoef[i];
-						return stream;
-					}
-
-					if (_vecCoef[i] < 0.0)
-					{
-						if (_vecCoef[i] == -1.0)
-							stream << "-x";
-						else
-							stream << _vecCoef[i] << "*x";;
-					}
-					else
-					{
-						if (_vecCoef[i] == 1.0)
-							stream << "x";
-						else
-							stream << _vecCoef[i] << "*x";;
-					}
-					// adding x exponent
-					if (i > 1)
-						stream << "^" << i;
+				// Skip zero coefficients
+				bool is_zero = false;
+				if constexpr (std::is_floating_point_v<CoefT>) {
+					is_zero = (std::abs(_vecCoef[i]) < 1e-12);
 				}
-				else // handling other terms
-				{
-					if (i == 0)
-					{
-						if (_vecCoef[i] > 0.0)
-							stream << " + " << _vecCoef[i];
-						else
-							stream << " - " << std::abs(_vecCoef[i]);
-						return stream;
-					}
+				else if constexpr (std::is_same_v<CoefT, std::complex<double>> || std::is_same_v<CoefT, std::complex<float>>) {
+					is_zero = (std::abs(_vecCoef[i]) < 1e-12);
+				}
+				else {
+					is_zero = (_vecCoef[i] == CoefT(0));
+				}
+				if (is_zero) continue;
 
-					if (_vecCoef[i] > 0.0)
-					{
-						if (_vecCoef[i] == 1.0)
-							stream << " + x";
-						else
-							stream << " + " << _vecCoef[i] << "*x";;
+				// Print sign and separator
+				if (!first) {
+					if constexpr (std::is_arithmetic_v<CoefT>) {
+						stream << (_vecCoef[i] >= CoefT(0) ? " + " : " - ");
 					}
-					else
-					{
-						if (_vecCoef[i] == -1.0)
-							stream << " - x";
-						else
-							stream << " - " << std::abs(_vecCoef[i]) << "*x";;
+					else {
+						stream << " + "; // Always use '+' for non-ordered types
 					}
+				}
+				else {
+					if constexpr (std::is_arithmetic_v<CoefT>) {
+						if (_vecCoef[i] < CoefT(0)) stream << "-";
+					}
+					first = false;
+				}
 
-					if (i > 1)
-						stream << "^" << i;
+				// Print coefficient (absolute value for arithmetic types, as-is for others)
+				if constexpr (std::is_arithmetic_v<CoefT>) {
+					CoefT abs_coef = _vecCoef[i] < CoefT(0) ? -_vecCoef[i] : _vecCoef[i];
+					bool print_coef = (i == 0) || (abs_coef != CoefT(1));
+					if (print_coef) stream << abs_coef;
+				}
+				else {
+					stream << _vecCoef[i];
+				}
+
+				// Variable and exponent
+				if (i > 0) {
+					stream << "x";
+					if (i > 1) stream << "^" << i;
 				}
 			}
 
+			if (first) stream << CoefT(0);
+
+			stream.flags(f);
 			return stream;
 		}
 
-		friend std::ostream& operator<<(std::ostream& stream, const Polynom<_Field>& a)
+		friend std::ostream& operator<<(std::ostream& stream, const Polynom& poly)
 		{
-			a.Print(stream);
-
-			return stream;
+			return poly.Print(stream);
 		}
 	};
 
-	class RealPolynom : public Polynom<Real>, public IRealFunction
+	class PolynomRealFunc : public Polynom<Real>, public IRealFunction
 	{
 	public:
-		RealPolynom() {}
-		RealPolynom(int n) { _vecCoef.resize(n + 1); }
-		RealPolynom(const std::vector<Real>& vecCoef) : Polynom(vecCoef) {}
-		RealPolynom(std::initializer_list<Real> list) : Polynom(list) {}
-		RealPolynom(const Polynom& Copy) : Polynom(Copy) {}
-		~RealPolynom() {}
+		PolynomRealFunc() {}
+		PolynomRealFunc(int n) { _vecCoef.resize(n + 1); }
+		PolynomRealFunc(const std::vector<Real>& vecCoef) : Polynom(vecCoef) {}
+		PolynomRealFunc(std::initializer_list<Real> list) : Polynom(list) {}
+		PolynomRealFunc(const Polynom& Copy) : Polynom(Copy) {}
+		~PolynomRealFunc() {}
 
 		Real operator()(Real x) const { return Polynom::operator()(x); }
 	};
 
-	//typedef Polynom<Real>         RealPolynom;
-	typedef Polynom<Complex>   ComplexPolynom;
+	typedef Polynom<Real>      PolynomReal;
+	typedef Polynom<Complex>   PolynomComplex;
+	
+	typedef Polynom<Real, Complex>   PolynomComplexRealCoef;
 
-	typedef Polynom<MatrixNM<Real, 2, 2>>       Matrix2Polynom;
-	typedef Polynom<MatrixNM<Real, 3, 3>>       Matrix3Polynom;
-	typedef Polynom<MatrixNM<Real, 4, 4>>       Matrix4Polynom;
+	typedef Polynom<Real, MatrixNM<Real, 2, 2>>       Matrix2Polynom;
+	typedef Polynom<Real, MatrixNM<Real, 3, 3>>       Matrix3Polynom;
+	typedef Polynom<Real, MatrixNM<Real, 4, 4>>       Matrix4Polynom;
 }
 
 #endif

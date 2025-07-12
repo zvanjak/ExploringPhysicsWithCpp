@@ -7,21 +7,22 @@
 #include "interfaces/IODESystemStepCalculator.h"
 #include "interfaces/IODESystemStepper.h"
 
-#include "core/ODESystem.h"
-#include "core/ODESystemSolution.h"
+#include "base/ODESystem.h"
+#include "base/ODESystemSolution.h"
 
 
 namespace MML
 {
 	class ODESystemFixedStepSolver
 	{
-		IODESystem& _odeSys;
-		IODESystemStepCalculator& _stepCalc;
+		const IODESystem& _odeSys;
+		const IODESystemStepCalculator& _stepCalc;
 
 	public:
-		ODESystemFixedStepSolver(IODESystem& inOdeSys, IODESystemStepCalculator& inStepCalc)
-			: _odeSys(inOdeSys), _stepCalc(inStepCalc) { }
-		
+		ODESystemFixedStepSolver(const IODESystem& inOdeSys, const IODESystemStepCalculator& inStepCalc)
+			: _odeSys(inOdeSys), _stepCalc(inStepCalc) {
+		}
+
 		// For given numSteps, ODESystemSolution will have numSteps+1 values!
 		ODESystemSolution integrate(const Vector<Real>& initCond, Real t1, Real t2, int numSteps)
 		{
@@ -50,19 +51,93 @@ namespace MML
 		}
 	};
 
-	template<class Stepper>	class ODESystemSolver 
+	// CHECK!!!
+	class ODESystemLeapfrogSolver
 	{
-		IODESystem&		_sys;
+		IODESystem& _odeSys;
+
+	public:
+		ODESystemLeapfrogSolver(IODESystem& inOdeSys)	: _odeSys(inOdeSys) {
+		}
+		// Leapfrog integrator for ODE systems.
+		ODESystemSolution integrate(const Vector<Real>& initCond, Real t1, Real t2, int numSteps)
+		{
+			int dim = _odeSys.getDim();
+			int half_n = dim / 2;
+			ODESystemSolution sol(t1, t2, dim, numSteps);
+
+			Vector<Real> x(initCond); // current state
+			Vector<Real> dxdt(dim);   // derivatives
+			Vector<Real> x_out(dim);  // next state
+
+			sol.fillValues(0, t1, x); // store initial values
+
+			Real t = t1;
+			Real h = (t2 - t1) / numSteps;
+
+			// Initial acceleration
+			_odeSys.derivs(t, x, dxdt);
+
+			// Split x into positions and velocities
+			Vector<Real> pos(half_n), vel(half_n), acc(half_n);
+			for (int i = 0; i < half_n; ++i) {
+				pos[i] = x[i];
+				vel[i] = x[half_n + i];
+				acc[i] = dxdt[half_n + i];
+			}
+
+			for (int k = 1; k <= numSteps; ++k) {
+				// 1. Advance velocities by half step
+				for (int i = 0; i < half_n; ++i)
+					vel[i] += 0.5 * h * acc[i];
+
+				// 2. Advance positions by full step
+				for (int i = 0; i < half_n; ++i)
+					pos[i] += h * vel[i];
+
+				t += h;
+
+				// 3. Compute new acceleration at new position
+				for (int i = 0; i < half_n; ++i) {
+					x[i] = pos[i];
+					x[half_n + i] = vel[i]; // temporary, needed for acceleration calculation
+				}
+				_odeSys.derivs(t, x, dxdt);
+				for (int i = 0; i < half_n; ++i)
+					acc[i] = dxdt[half_n + i];
+
+				// 4. Advance velocities by another half step
+				for (int i = 0; i < half_n; ++i)
+					vel[i] += 0.5 * h * acc[i];
+
+				// 5. Store new state in x_out and save
+				for (int i = 0; i < half_n; ++i) {
+					x_out[i] = pos[i];
+					x_out[half_n + i] = vel[i];
+				}
+				sol.fillValues(k, t, x_out);
+
+				// Prepare for next step
+				x = x_out;
+			}
+
+			return sol;
+		}
+	};
+
+	template<class Stepper>	class ODESystemSolver
+	{
+		IODESystem& _sys;
 		Stepper				_stepper;
 
 		// used as reference by stepper!
-		Real					_curr_t;               
+		Real					_curr_t;
 		Vector<Real>	_curr_x;
 		Vector<Real>	_curr_dxdt;
 
 	public:
 		ODESystemSolver(IODESystem& sys)
-			: _sys(sys), _stepper(sys, _curr_t, _curr_x, _curr_dxdt) 
+			: _sys(sys), _stepper(sys, _curr_t, _curr_x, _curr_dxdt)
 		{
 			_curr_x.Resize(_sys.getDim());
 			_curr_dxdt.Resize(_sys.getDim());
@@ -77,7 +152,7 @@ namespace MML
 																Real eps, Real h1, Real hmin = 0)
 		{
 			Real xsav, h;
-			int	i, stepNum, numSavedSteps=0, sysDim = _sys.getDim();
+			int	i, stepNum, numSavedSteps = 0, sysDim = _sys.getDim();
 			int expectedSteps = (int)((t2 - t1) / minSaveInterval) + 1;
 			ODESystemSolution sol(t1, t2, sysDim, expectedSteps);
 
@@ -90,7 +165,7 @@ namespace MML
 
 			if (expectedSteps > 0)	xsav = _curr_t - minSaveInterval * 2.0;
 
-			for (stepNum = 0; stepNum < Defaults::ODESolverMaxSteps; stepNum++)	{
+			for (stepNum = 0; stepNum < Defaults::ODESolverMaxSteps; stepNum++) {
 				_sys.derivs(_curr_t, _curr_x, _curr_dxdt);
 
 				// storing intermediate results, if we have advanced enough
@@ -106,9 +181,9 @@ namespace MML
 
 				_stepper.doStep(h, eps);
 
-				if (_stepper.hDone() == h) 
+				if (_stepper.hDone() == h)
 					sol.incrementNumStepsOK();
-				else 
+				else
 					sol.incrementNumStepsBad();
 
 				// check if we are done

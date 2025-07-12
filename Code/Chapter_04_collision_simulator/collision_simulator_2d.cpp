@@ -3,261 +3,747 @@
 #else
 #include "MMLBase.h"
 
-#include "base/VectorTypes.h"
+#include "algorithms/Statistics.h"
 
 #include "tools/Serializer.h"
 #include "tools/Visualizer.h"
+#include "tools/Timer.h"
+
+#include "../mpl/CollisionSimulator2D/CollisionSimulator2D.h"
+#include "../mpl/CollisionSimulator2D/ContainerFactory2D.h"
 #endif
 
 using namespace MML;
+using namespace MPL;
 
-// Calculating deviation and changes for ever decreasing dT
+
+// simulation with two types of balls, with randomized masses, radii, positions and velocities
+void Collision_Simulator_2D_N_random_balls()
+{
+	int N = 10000; // Number of random balls
+
+	const std::string& color1 = "Red";
+	const std::string& color2 = "Blue";
+	double minMass1 = 1.0, maxMass1 = 2.0, minRad1 = 1.0, maxRad1 = 2.0, velocityRange1 = 5.0;
+	double minMass2 = 1.0, maxMass2 = 2.0, minRad2 = 1.0, maxRad2 = 2.0, velocityRange2 = 5.0;
+
+	auto box = ContainerFactory2D::CreateConfig1(1000, 800, N,
+		color1, minMass1, maxMass1, minRad1, maxRad1, velocityRange1,
+		color2, minMass2, maxMass2, minRad2, maxRad2, velocityRange2);
+
+	CollisionSimulator2D simulator(box, 4, 4);
+
+	int numSteps = 100;
+	double dT = 1.0; // time step for simulation
+	auto simResults = simulator.Simulate(numSteps, dT);
+
+	std::string fileName = "collision_sim_" + std::to_string(N) + "_random_balls.txt";
+	simulator.Serialize(MML_PATH_ResultFiles + fileName, simResults, dT);
+
+	Visualizer::VisualizeParticleSimulation2D(fileName);
+}
+
+// simulation with two types of balls, initially each type occupies one half of the container
+// random balls position within each half
+void Collision_Simulator_2D_two_types_initially_separated()
+{
+	int		 nBall1 = 5000;
+	double mass1 = 5, rad1 = 2.5, vel1 = 10;
+	int		 nBall2 = 5000;
+	double mass2 = 5, rad2 = 2.5, vel2 = 50;		// five times faster than red balls
+
+	auto box = ContainerFactory2D::CreateConfig2(1000, 800, "Red", nBall1, mass1, rad1, vel1, "Blue", nBall2, mass2, rad2, vel2);
+
+	CollisionSimulator2D simulator(box, 10, 10);
+
+	int numSteps = 20000;
+	double dT = 0.05;										// time step for simulation	
+	double totalTime = numSteps * dT;		// maximum time for simulation
+
+	std::cout << "Starting simulation with " << numSteps << " steps" << std::endl;
+	auto simResults = simulator.Simulate(numSteps, dT);
+
+	std::cout << "Simulation finished." << std::endl;
+
+	simulator.Serialize(MML_PATH_ResultFiles + "collision_sim_2d_1000_x_800_1000_steps.txt", simResults, dT, 100);
+
+	Visualizer::VisualizeParticleSimulation2D("collision_sim_2d_1000_x_800_1000_steps.txt");
+
+	/*
+
+		//for (int i = 0; i < numSteps; i += 10)
+		//{
+		//	double minSpeed, maxSpeed, avgSpeed, speedDev;
+		//	simResults.CalcAllBallsStatistic(i, minSpeed, maxSpeed, avgSpeed, speedDev);
+
+		//	// print step number and statistics
+		//	std::cout << "Step " << i << ": Min Speed = " << minSpeed << ", Max Speed = " << maxSpeed
+		//		<< ", Avg Speed = " << avgSpeed << ", Speed Dev = " << speedDev << std::endl;
+		//}
+
+		// Average speed of balls by color visualization
+		Vector<Real> vecTime, avgSpeedRed, avgSpeedBlue;
+		for (int i = 0; i < numSteps; i += 10)
+		{
+			auto avgs = simResults.AvgSpeedByColor(i);
+
+			if( avgs[0].first == "Red" ) {
+				avgSpeedRed.push_back(avgs[0].second);
+				avgSpeedBlue.push_back(avgs[1].second);
+			}
+			else {
+				avgSpeedRed.push_back(avgs[1].second);
+				avgSpeedBlue.push_back(avgs[0].second);
+			}
+			vecTime.push_back(i * dT);
+		}
+
+		// create linear interpolation functions for average speeds
+		LinearInterpRealFunc avgSpeedRedFunc(vecTime, avgSpeedRed);
+		LinearInterpRealFunc avgSpeedBlueFunc(vecTime, avgSpeedBlue);
+
+		Visualizer::VisualizeMultiRealFunction({ avgSpeedRedFunc, avgSpeedBlueFunc },
+																						"Average speeds of balls by color", { "Red balls", "Blue balls" },
+																						vecTime[0], vecTime[vecTime.size() - 1], 100,
+																						"avg_speed_by_color.txt");
+
+		// Let's visualize evolution of x-coordinate of center of mass evolution for both types of balls
+		Vector<Real> comRed, comBlue;
+		for (int i = 0; i < numSteps; i += 10)
+		{
+			auto avgs = simResults.CentreOfMassByColor(i);
+
+			if (avgs[0].first == "Red") {
+				comRed.push_back(avgs[0].second.X());
+				comBlue.push_back(avgs[1].second.X());
+			}
+			else {
+				comRed.push_back(avgs[1].second.X());
+				comBlue.push_back(avgs[0].second.X());
+			}
+		}
+
+		// create linear interpolation functions for center of mass x-coordinates
+		LinearInterpRealFunc comRedFunc(vecTime, comRed);
+		LinearInterpRealFunc comBlueFunc(vecTime, comBlue);
+
+		Visualizer::VisualizeMultiRealFunction({ comRedFunc, comBlueFunc },
+																						"Centre of mass x-coordinate by color", { "Red balls", "Blue balls" },
+																						vecTime[0], vecTime[vecTime.size() - 1], 100,
+																						"com_x_by_color.txt");
+	*/
+}
+
+// energetic core of N particles, with M particles around it, which are moving randomly
+void Collision_Simulator_2D_3()
+{
+	int		 numBalls = 50000;
+	double mass1 = 5, rad1 = 1, vel1 = 2;
+
+	int		 numEnergetic = 100;
+	double mass2 = 5, rad2 = 1, vel2 = 500;
+
+	double posRadius = 25;
+
+	auto box = ContainerFactory2D::CreateConfig3(1000, 800, numBalls, mass1, rad1, vel1, numEnergetic, posRadius, mass2, rad2, vel2);
+
+	CollisionSimulator2D simulator(box, 10, 10);
+
+	int numSteps = 1000;
+	double dT = 0.005; // time step for simulation
+
+	auto simResults = simulator.Simulate(numSteps, dT);
+
+	simulator.Serialize(MML_PATH_ResultFiles + "collision_sim_2d_3.txt", simResults, dT);
+
+	Visualizer::VisualizeParticleSimulation2D("collision_sim_2d_3.txt");
+}
+
+void Collision_Simulator_2D_Brown_motion()
+{
+	auto box = ContainerFactory2D::CreateBrownMotionConfig(1000, 800, 300);
+
+	CollisionSimulator2D simulator(box);
+
+	int numSteps = 100;
+	double dT = 1.0;
+	auto simResults = simulator.Simulate(numSteps, dT);
+
+	simulator.Serialize(MML_PATH_ResultFiles + "collision_sim_brown_motion.txt", simResults, dT);
+
+	//Visualizer::VisualizeParticleSimulation2D("collision_sim_brown_motion.txt");
+
+	auto path = simResults.getPathForBall(0);
+
+	std::vector<VectorN<Real, 2>> res;
+	for (int i = 0; i < path.size(); i++)
+		res.push_back(VectorN<Real, 2>{path[i].X(), path[i].Y()});
+
+	Serializer::SaveAsParamCurve<2>(res, "PARAMETRIC_CURVE_CARTESIAN_2D", "brown_motion_main_body_path.txt",
+		0, numSteps, path.size(),
+		MML_PATH_ResultFiles + "brown_motion_main_body_path.txt");
+
+	Visualizer::VisualizeMultiParamCurve2D({ "brown_motion_main_body_path.txt", "brown_motion_main_body_path1.txt" , "brown_motion_main_body_path2.txt", "brown_motion_main_body_path3.txt",
+																					 "brown_motion_main_body_path4.txt" , "brown_motion_main_body_path5.txt", "brown_motion_main_body_path6.txt" });
+
+	//ParametricCurve2 curve(path, 1.0);
+}
+
+void Collision_Simulator_2D_Brown_motion_analysis()
+{
+	int NumSmallBalls = 500;
+	std::vector<int> listStepNum{ 50, 100, 200, 500, 1000 };
+
+	std::cout << "NUM SMALL BALLS = " << NumSmallBalls << std::endl;
+
+	for (int numSteps : listStepNum)
+	{
+		std::cout << "NUM STEPS = " << numSteps << std::endl;
+
+		double sumDist = 0.0;
+		int NumRepeats = 500;
+		for (int i = 0; i < NumRepeats; i++)
+		{
+			auto box = ContainerFactory2D::CreateBrownMotionConfig(1000, 800, NumSmallBalls);
+
+			CollisionSimulator2D simulator(box);
+
+			auto simResults = simulator.Simulate(numSteps, 1.0);
+
+			auto path = simResults.getPathForBall(0);
+
+			Pnt2Cart lastPos = path[path.size() - 1];
+
+			double dist = lastPos.Dist(Pnt2Cart(500, 400));
+			sumDist += dist;
+
+			//std::cout << lastPos.X() << " " << lastPos.Y() << "  -  " << dist << std::endl;
+		}
+		double avgDist = sumDist / NumRepeats;
+
+		std::cout << "AVG DIST = " << avgDist << std::endl;
+	}
+
+	// for given number of steps in simulation, investigate how average distance behaves 
+	// with large number of trials
+	//int numSteps = 50;
+	//std::cout << "NUM STEPS = " << numSteps << std::endl;
+
+	//double sumDist = 0.0;
+	//std::vector<int> listNumRepeats{ 10 , 25, 50, 100, 200, 500, 1000 };
+	//for (int numRepeats : listNumRepeats)
+	//{
+	//	for (int i = 0; i < numRepeats; i++)
+	//	{
+	//		auto box = ConfigFactory2D::CreateBrownMotionConfig(1000, 800, NumSmallBalls);
+
+	//		CollisionSimulator2D simulator(box);
+
+	//		auto simResults = simulator.Simulate(numSteps, 1.0);
+
+	//		auto path = simResults.getPathForBall(0);
+
+	//		Pnt2Cart lastPos = path[path.size() - 1];
+
+	//		double dist = lastPos.Dist(Pnt2Cart(500, 400));
+	//		sumDist += dist;
+
+	//		// keep max and min distances
+	//		// std::cout << lastPos.X() << " " << lastPos.Y() << "  -  " << dist << std::endl;
+	//	}
+	//	double avgDist = sumDist / numRepeats;
+	//	std::cout << "NUM REPEATS = " << numRepeats << "  AVG DIST = " << avgDist << std::endl;
+	//}
+}
+
+// for a given number of balls, and number of steps, compare simulation times for exact and fast implementation
+void Collision_Simulator_2D_Test_fast()
+{
+	int N = 1000;						// Number of random balls
+	int numSteps = 100;
+	double dT = 1.0;				// time step for simulation
+
+	const std::string& color1 = "Red";
+	double minMass1 = 1.0, maxMass1 = 10.0, minRad1 = 1.0, maxRad1 = 4.0, velocityRange1 = 5.0;
+	const std::string& color2 = "Blue";
+	double minMass2 = 1.0, maxMass2 = 10.0, minRad2 = 1.0, maxRad2 = 4.0, velocityRange2 = 5.0;
+
+	auto origConfig = ContainerFactory2D::CreateConfig1(1000, 800, N,
+		color1, minMass1, maxMass1, minRad1, maxRad1, velocityRange1,
+		color2, minMass2, maxMass2, minRad2, maxRad2, velocityRange2);
+
+	Timer timer;
+
+	timer.Start();
+
+	auto box1 = origConfig;
+	CollisionSimulator2D simulator1(box1);
+	auto simResults1 = simulator1.Simulate(numSteps, dT, CollisionSimulatorRunType::RunTypeExact);
+
+	timer.MarkTime("Simulation time exact");
+
+	auto box2 = origConfig;
+	CollisionSimulator2D simulator2(box2, 4, 4);
+	auto simResults2 = simulator2.Simulate(numSteps, dT, CollisionSimulatorRunType::RunTypeFastMultithread);
+
+	timer.MarkTime("Simulation time fast");
+
+	std::cout << "Serializing results..." << std::endl;
+	std::string fileName = "collision_sim_" + std::to_string(N) + "_random_balls.txt";
+	simulator2.Serialize(MML_PATH_ResultFiles + fileName, simResults2, dT);
+
+	timer.MarkTime("Serialization time");
+
+	Visualizer::VisualizeParticleSimulation2D(fileName);
+
+	timer.Print();
+
+	// usporediti rješenja simulacija
+}
+
+// TODO - investigate how different number of rows/cols influences simulation time
+void Collision_Simulator_2D_Test_scaling_with_rows_cols()
+{
+	std::vector<std::string> strNumSteps;
+	std::vector<LinearInterpRealFunc> simTimeFuncs;
+
+	Vector<int> vecNumBalls{ 500, 1000, 2000, 5000, 10000, 15000 };
+	Matrix<Real> matTimes(10, vecNumBalls.size());		// to store simulation results
+
+	for (int i = 0; i < vecNumBalls.size(); i++)
+	{
+		std::cout << "Testing with " << vecNumBalls[i] << " balls..." << std::endl;
+
+		int N = vecNumBalls[i];
+		int numSteps = 100;
+		double dT = 1.0;
+
+		const std::string& color1 = "Red";
+		double minMass1 = 1.0, maxMass1 = 10.0, minRad1 = 1.0, maxRad1 = 4.0, velocityRange1 = 5.0;
+		const std::string& color2 = "Blue";
+		double minMass2 = 1.0, maxMass2 = 10.0, minRad2 = 1.0, maxRad2 = 4.0, velocityRange2 = 5.0;
+
+		auto box = ContainerFactory2D::CreateConfig1(1000, 800, N,
+			color1, minMass1, maxMass1, minRad1, maxRad1, velocityRange1,
+			color2, minMass2, maxMass2, minRad2, maxRad2, velocityRange2);
+
+		Timer timer;
+
+		// first, measure time for simulation with no subdivision of container
+		CollisionSimulator2D simulator1(box);				// no rows/cols
+
+		Vector<Real> vecNumRowsCols;
+		Vector<Real> vecSimTimes;
+
+		if (N < 3000)
+		{
+			timer.Start();
+			auto simResults1 = simulator1.Simulate(numSteps, dT, CollisionSimulatorRunType::RunTypeExact);
+			timer.MarkTime("Simulation time without rows/cols");
+			std::cout << "Simulation time without rows/cols: " << timer.GetTotalTime() << " seconds." << std::endl;
+
+			vecNumRowsCols.push_back(0);
+			vecSimTimes.push_back(timer.GetTotalTime());
+
+			matTimes(0, i) = timer.GetTotalTime();		// store time for no rows/cols
+		}
+		else
+		{
+			vecNumRowsCols.push_back(0);
+			vecSimTimes.push_back(100);
+
+			matTimes(0, i) = 100;
+		}
+
+		for (int numRowsCols = 2; numRowsCols <= 10; numRowsCols++)
+		{
+			std::cout << "Testing with " << numRowsCols << " rows and cols..." << std::endl;
+
+			CollisionSimulator2D simulator1(box, numRowsCols, numRowsCols);
+
+			timer.Start();
+			auto simResults2 = simulator1.Simulate(numSteps, dT, CollisionSimulatorRunType::RunTypeFastMultithread);
+			timer.MarkTime("Simulation time with " + std::to_string(numRowsCols) + " rows/cols");
+			std::cout << "Simulation time with " << numRowsCols << " rows/cols: "
+				<< timer.GetTotalTime() << " seconds." << std::endl;
+
+			vecNumRowsCols.push_back(numRowsCols);
+			vecSimTimes.push_back(timer.GetTotalTime());
+
+			matTimes(numRowsCols - 1, i) = timer.GetTotalTime();		// store time for this number of rows/cols
+		}
+
+		// visualize simulation times for different number of rows/cols
+		LinearInterpRealFunc simTimeFunc(vecNumRowsCols, vecSimTimes);
+
+		simTimeFuncs.push_back(simTimeFunc);
+		strNumSteps.push_back("N - " + std::to_string(N));
+
+		//Visualizer::VisualizeRealFunction(simTimeFunc, "Simulation time vs number of rows/cols",
+		//	vecNumRowsCols[0], vecNumRowsCols[vecNumRowsCols.size() - 1], 100,
+		//	"sim_time_vs_rows_cols.txt");
+	}
+
+	// print matrix of simulation times
+	std::cout << "Simulation times matrix:" << std::endl;
+	std::cout << "Rows/Cols: ";
+	std::cout << matTimes << std::endl;
+
+	// visualize all simulation time functions on one plot
+	Visualizer::VisualizeMultiRealFunction(simTimeFuncs,
+		"Simulation time vs number of rows / cols for different number of balls", strNumSteps,
+		0, 10, 100, "sim_time_multi_N.txt");
+}
+
+// TODO - comparing simulation times for exact and fast implementation and how it scales with number of balls and steps
+
+// visualizing pressure on walls during simulation
+void Collision_Simulator_2D_Pressure_on_walls()
+{
+	int numBalls = 10000;
+
+	const std::string& color1 = "Red";
+	double minMass1 = 1.0, maxMass1 = 10.0, minRad1 = 1.0, maxRad1 = 2.0, velocityRange1 = 5.0;
+	const std::string& color2 = "Blue";
+	double minMass2 = 1.0, maxMass2 = 10.0, minRad2 = 1.0, maxRad2 = 2.0, velocityRange2 = 5.0;
+
+	auto box = ContainerFactory2D::CreateConfig1(1000, 1000, numBalls,
+		color1, minMass1, maxMass1, minRad1, maxRad1, velocityRange1,
+		color2, minMass2, maxMass2, minRad2, maxRad2, velocityRange2);
+
+	BoxContainerWallPressureRecorder2D recorder(numBalls);
+	box.setWallPressureRecorder(&recorder);
+
+	CollisionSimulator2D simulator(box, 8, 8, &recorder);
+
+	int numSteps = 100;
+	double dT = 1;
+	auto simResults = simulator.Simulate(numSteps, dT, CollisionSimulatorRunType::RunTypeFastMultithread);
+
+	auto leftWallPressure = recorder.getTranferedMomentumPerStepForWall(0);
+	auto rightWallPressure = recorder.getTranferedMomentumPerStepForWall(1);
+	auto bottomWallPressure = recorder.getTranferedMomentumPerStepForWall(2);
+	auto topWallPressure = recorder.getTranferedMomentumPerStepForWall(3);
+
+	std::cout << "Step      Left Wall      Right Wall       Bottom Wall       Top Wall      Total" << std::endl;
+	std::cout << "----------------------------------------------------------------------------------------" << std::endl;
+
+	// print pressure on walls for each step
+	for (int i = 0; i < leftWallPressure.size(); i++)
+	{
+		std::cout.precision(5);
+		std::cout.setf(std::ios::fixed, std::ios::floatfield);
+		std::cout.setf(std::ios::showpoint);
+		std::cout.setf(std::ios::right);
+		std::cout.width(3);
+		std::cout << i << " ";
+		std::cout.width(15);
+		std::cout << leftWallPressure[i] << " ";
+		std::cout.width(15);
+		std::cout << rightWallPressure[i] << " ";
+		std::cout.width(15);
+		std::cout << bottomWallPressure[i] << " ";
+		std::cout.width(15);
+		std::cout << topWallPressure[i] << " ";
+		// print total pressure on walls
+		std::cout.width(15);
+		std::cout << leftWallPressure[i] + rightWallPressure[i] + bottomWallPressure[i] + topWallPressure[i] << std::endl;
+	}
+	std::cout << "----------------------------------------------------------------------------------------" << std::endl;
+
+
+	auto totalWallPressure = recorder.getTotalTransferedMomentumPerStep();
+
+	Vector<Real> x, y;
+	for (int i = 0; i < totalWallPressure.size(); i++)
+	{
+		x.push_back(i);
+		y.push_back(totalWallPressure[i]);
+	}
+	LinearInterpRealFunc funcTotalPressure(x, y);
+
+	// visualize function of total pressure on walls
+	Visualizer::VisualizeRealFunction(funcTotalPressure, "Total pressure on walls during simulation",
+		0, numSteps - 1, numSteps - 1, "total_pressure_on_walls.txt");
+
+	// visualize pressure on all four walls separately, in same graph
+
+
+	//simulator.Serialize(MML_PATH_ResultFiles + "collision_sim_pressure_on_walls.txt", simResults.BallPosList);
+
+	//Visualizer::VisualizeParticleSimulation2D("collision_sim_pressure_on_walls.txt");
+}
+
+// for a given number of steps, compare average pressure on walls for different number of balls
+void Collision_Simulator_2D_Comparing_pressure_for_diff_N()
+{
+	int numSteps = 500;
+
+	Vector<int>  numBallsList{ 1000, 2000, 4000, 8000, 16000 };
+	Vector<Real> avgPressure;
+
+	std::vector<std::string> strNumBalls;
+	std::vector<LinearInterpRealFunc> totalPressureFuncs;
+
+	std::cout << numSteps << " steps for each simulation." << std::endl;
+	for (int i = 0; i < numBallsList.size(); i++)
+	{
+		int numBalls = numBallsList[i];
+
+		const std::string color = "Red";
+		double mass = 1.0, rad = 1.0, velocityRange = 5.0;
+
+		auto box = ContainerFactory2D::CreateConfigNSameBalls(1000, 1000, numBalls,
+			mass, rad, velocityRange, color);
+
+		BoxContainerWallPressureRecorder2D recorder(numBalls);
+		box.setWallPressureRecorder(&recorder);
+
+		CollisionSimulator2D* pSimulator;
+		if (numBalls < 10000)
+			pSimulator = new CollisionSimulator2D(box, 4, 4, &recorder);
+		else
+			pSimulator = new CollisionSimulator2D(box, 8, 8, &recorder);
+
+		auto simResults = pSimulator->Simulate(numSteps, 1.0, CollisionSimulatorRunType::RunTypeFastMultithread);
+
+		auto totalWallPressure = recorder.getTotalTransferedMomentumPerStep();
+
+		Vector<Real> x, y;
+		for (int i = 0; i < totalWallPressure.size(); i++)
+		{
+			x.push_back(i);
+			y.push_back(totalWallPressure[i]);
+		}
+
+		LinearInterpRealFunc funcTotalPressure(x, y);
+
+		totalPressureFuncs.push_back(funcTotalPressure);
+		strNumBalls.push_back("N - " + std::to_string(numBallsList[i]));
+
+		// print average pressure on walls for each N
+		Real avg, stdDev;
+		Statistics::AvgStdDev(y, avg, stdDev);
+		avgPressure.push_back(avg);
+		std::cout << "N = " << numBalls << "   Avg = " << avg << "   " << "StdDev = " << stdDev << "StdDev in perc.of avg = " << stdDev / avg * 100.0 << "%" << std::endl;
+
+
+		// visualize function of total pressure on walls
+		//Visualizer::VisualizeRealFunction(totalPressure, "Total pressure on walls", 0, numSteps - 1, numSteps - 1, "total_pressure_on_walls.txt");
+
+		delete pSimulator;		// delete simulator to free memory
+	}
+
+	// visualize all total pressure functions on one plot
+	Visualizer::VisualizeMultiRealFunction(totalPressureFuncs,
+		"Total pressure on walls for different number of balls", strNumBalls,
+		0, numSteps, numSteps, "total_pressure_multi_N.txt");
+
+	// now visualize graph showing dependence of average pressure on N
+	Vector<Real> x;
+	for (int i = 0; i < numBallsList.size(); i++)
+		x.push_back(numBallsList[i]);
+
+	LinearInterpRealFunc avgPressureFunc(x, avgPressure);
+
+	Visualizer::VisualizeRealFunction(avgPressureFunc, "Average pressure on walls for different number of balls",
+		x[0], numBallsList[numBallsList.size() - 1], numSteps - 1, "avg_pressure_on_walls_diff_N.txt");
+}
+
+// for a given number of steps, compare average pressure on walls for different size of the container
+void Collision_Simulator_2D_Comparing_pressure_for_diff_V()
+{
+	int numSteps = 300;
+	int numBalls = 5000;		// number of balls in each simulation
+
+	Vector<int>  containerSizeList{ 500, 700, 1000, 1300, 1500, 2000 };
+	Vector<Real> avgPressure;
+
+	std::vector<std::string> strContSize;
+	std::vector<LinearInterpRealFunc> totalPressureFuncs;
+
+	std::cout << "Number of steps = " << numSteps << std::endl;
+	std::cout << "Number of balls = " << numBalls << std::endl;
+	for (int i = 0; i < containerSizeList.size(); i++)
+	{
+		int contSize = containerSizeList[i];
+
+		const std::string color = "Red";
+		double mass = 1.0, rad = 1.0, velocityRange = 5.0;
+
+		auto box = ContainerFactory2D::CreateConfigNSameBalls(contSize, contSize, numBalls,
+			mass, rad, velocityRange, color);
+
+		BoxContainerWallPressureRecorder2D recorder(numBalls);
+		box.setWallPressureRecorder(&recorder);
+
+		CollisionSimulator2D simulator(box, 6, 6, &recorder);;
+
+		auto simResults = simulator.Simulate(numSteps, 1.0, CollisionSimulatorRunType::RunTypeFastMultithread);
+
+		auto totalWallPressure = recorder.getTotalTransferedMomentumPerStep();
+
+		Vector<Real> x, y;
+		for (int i = 0; i < totalWallPressure.size(); i++)
+		{
+			x.push_back(i);
+			y.push_back(totalWallPressure[i]);
+		}
+
+		LinearInterpRealFunc funcTotalPressure(x, y);
+
+		totalPressureFuncs.push_back(funcTotalPressure);
+		strContSize.push_back("Cont.size - " + std::to_string(containerSizeList[i]));
+
+		Real avg, stdDev;
+		Statistics::AvgStdDev(y, avg, stdDev);
+		avgPressure.push_back(avg);
+		std::cout << "Container size = " << contSize << "   Avg = " << avg << "   " << "StdDev = " << stdDev
+			<< " StdDev in perc.of avg = " << stdDev / avg * 100.0 << "%" << std::endl;
+	}
+
+	// visualize all total pressure functions on one plot
+	Visualizer::VisualizeMultiRealFunction(totalPressureFuncs,
+		"Total pressure on walls for different size of container", strContSize,
+		0, numSteps - 1, numSteps - 1, "total_pressure_multi_V.txt");
+
+	// now visualize graph showing dependence of average pressure on V
+	Vector<Real> x_squared;
+	for (int i = 0; i < containerSizeList.size(); i++)
+		x_squared.push_back(containerSizeList[i] * containerSizeList[i]);
+
+	LinearInterpRealFunc avgPressureFunc(x_squared, avgPressure);
+
+	double maxX = POW2(containerSizeList[containerSizeList.size() - 1]);
+	Visualizer::VisualizeRealFunction(avgPressureFunc, "Average pressure on walls for different area of container",
+		x_squared[0], maxX, 100, "avg_pressure_on_walls_diff_V.txt");
+}
+
+// for a given number of steps, compare average pressure on walls for different speed of balls
+void Collision_Simulator_2D_Comparing_pressure_for_diff_speed_of_balls()
+{
+	int numSteps = 300;
+	int numBalls = 5000;		// number of balls in each simulation
+
+	Vector<Real>  speedList{ 1.0, 2.0, 5.0, 8.0, 10.0, 12.0, 15.0 };
+	Vector<Real> avgPressure;
+
+	std::vector<std::string> strSpeed;
+	std::vector<LinearInterpRealFunc> totalPressureFuncs;
+
+	std::cout << "Number of steps = " << numSteps << std::endl;
+	std::cout << "Number of balls = " << numBalls << std::endl;
+	for (int i = 0; i < speedList.size(); i++)
+	{
+		double speed = speedList[i];
+
+		const std::string color = "Red";
+		double mass = 1.0, rad = 1.0, velocityRange = speed;
+		auto box = ContainerFactory2D::CreateConfigNSameBalls(1000, 1000, numBalls,
+			mass, rad, velocityRange, color);
+		BoxContainerWallPressureRecorder2D recorder(numBalls);
+		box.setWallPressureRecorder(&recorder);
+
+		CollisionSimulator2D simulator(box, 6, 6, &recorder);;
+
+		auto simResults = simulator.Simulate(numSteps, 0.5, CollisionSimulatorRunType::RunTypeFastMultithread);
+
+		auto totalWallPressure = recorder.getTotalTransferedMomentumPerStep();
+		Vector<Real> x, y;
+		for (int i = 0; i < totalWallPressure.size(); i++)
+		{
+			x.push_back(i);
+			y.push_back(totalWallPressure[i]);
+		}
+		LinearInterpRealFunc funcTotalPressure(x, y);
+
+		totalPressureFuncs.push_back(funcTotalPressure);
+		strSpeed.push_back("Speed - " + std::to_string(speedList[i]));
+		Real avg, stdDev;
+		Statistics::AvgStdDev(y, avg, stdDev);
+		avgPressure.push_back(avg);
+		std::cout << "Speed = " << speed << "   Avg = " << avg << "   " << "StdDev = " << stdDev
+			<< " StdDev in perc.of avg = " << stdDev / avg * 100.0 << "%" << std::endl;
+	}
+	// visualize all total pressure functions on one plot
+	Visualizer::VisualizeMultiRealFunction(totalPressureFuncs,
+		"Total pressure on walls for different speed of balls", strSpeed,
+		0, numSteps - 1, numSteps - 1, "total_pressure_multi_speed.txt");
+
+	// now visualize graph showing dependence of average pressure on speed
+	Vector<Real> x_speed;
+	for (int i = 0; i < speedList.size(); i++)
+		x_speed.push_back(speedList[i]);
+
+	LinearInterpRealFunc avgPressureFunc(x_speed, avgPressure);
+
+	double maxX = speedList[speedList.size() - 1];
+	Visualizer::VisualizeRealFunction(avgPressureFunc, "Average pressure on walls for different speed of balls",
+		x_speed[0], maxX, 100, "avg_pressure_on_walls_diff_speed.txt");
+
+	// and visualization of square root of average pressure on walls depending on speed of molecules
+	Vector<Real> x_speed_sqrt, y_speed_sqrt;
+	for (int i = 0; i < speedList.size(); i++)
+	{
+		x_speed_sqrt.push_back(speedList[i]);
+		y_speed_sqrt.push_back(sqrt(avgPressure[i]));
+	}
+
+	LinearInterpRealFunc avgPressureSqrtFunc(x_speed_sqrt, y_speed_sqrt);
+
+	Visualizer::VisualizeRealFunction(avgPressureSqrtFunc, "Square root of average pressure on walls for different speed of balls",
+		x_speed_sqrt[0], maxX, 100, "avg_pressure_sqrt_on_walls_diff_speed.txt");
+
+}
+
+// TODO - investigate how number of steps influences calculated average pressure on walls
+
+// Investigate distibutions of velocities and positions of balls
+void Collision_Simulator_2D_Test_statistics()
+{
+	int N = 200; // Number of random balls
+
+	const std::string& color1 = "Red";
+	const std::string& color2 = "Blue";
+	double minMass1 = 1.0, maxMass1 = 10.0, minRad1 = 3.0, maxRad1 = 5.0, velocityRange1 = 5.0;
+	double minMass2 = 1.0, maxMass2 = 5.0, minRad2 = 3.0, maxRad2 = 5.0, velocityRange2 = 15.0;
+
+	auto box = ContainerFactory2D::CreateConfig1(1000, 800, N,
+		color1, minMass1, maxMass1, minRad1, maxRad1, velocityRange1,
+		color2, minMass2, maxMass2, minRad2, maxRad2, velocityRange2);
+
+	CollisionSimulator2D simulator(box);
+
+	int numSteps = 500;
+	SimResultsCollSim2D simResults = simulator.Simulate(numSteps, 1.0, CollisionSimulatorRunType::RunTypeExact);
+
+	// print average and standard deviation of velocities at each step
+	for (int i = 0; i < numSteps; i += 20)
+	{
+		double minSpeed, maxSpeed, avgSpeed, speedDev;
+		simResults.CalcAllBallsStatistic(i, minSpeed, maxSpeed, avgSpeed, speedDev);
+
+		// print step number and statistics
+		std::cout << "Step " << i << ": Min Speed = " << minSpeed << ", Max Speed = " << maxSpeed
+			<< ", Avg Speed = " << avgSpeed << ", Speed Dev = " << speedDev << std::endl;
+	}
+
+	// print average spped by color
+	for (int i = 0; i < numSteps; i += 10)
+	{
+		auto avgs = simResults.AvgSpeedByColor(i);
+		std::cout << "Step " << i << ": Avg Speed " << avgs[0].first << " = " << avgs[0].second
+			<< ", Avg Speed " << avgs[1].first << " = " << avgs[1].second << std::endl;
+	}
+
+	//std::string fileName = "collision_sim_" + std::to_string(N) + "_test_statistics.txt";
+	//simulator.Serialize(MML_PATH_ResultFiles + fileName, simResults.BallPosList);
+
+	//Visualizer::VisualizeParticleSimulation2D(fileName);
+}
+
+// TODO - setup framework for evaluating and analyzing results of collision simulations with different dT
 //   naci onu tocku nakon koje smanjivanje dT ne vodi drugacijim rezultatima
-
-namespace CollisionSimulator
-{
-	struct Ball2D
-	{
-	private:
-		double _mass;
-		double _radius;
-		std::string _color;
-		Point2Cartesian _position;
-		Vector2Cartesian _velocity;
-
-	public:
-		Ball2D(double mass, double radius, std::string color, const Point2Cartesian& position,
-			const Vector2Cartesian& velocity)
-			: _mass(mass), _radius(radius), _color(color), _position(position), _velocity(velocity)
-		{
-		}
-
-		double  Mass() const { return _mass; }
-		double& Mass() { return _mass; }
-
-		double  Rad() const { return _radius; }
-		double& Rad() { return _radius; }
-
-		std::string Color() const { return _color; }
-		std::string& Color() { return _color; }
-
-		Point2Cartesian  Pos() const { return _position; }
-		Point2Cartesian& Pos() { return _position; }
-
-		Vector2Cartesian  V() const { return _velocity; }
-		Vector2Cartesian& V() { return _velocity; }
-	};
-
-	struct Container2D
-	{
-		double _width;
-		double _height;
-
-		std::vector<Ball2D> _balls;
-
-		Container2D() : _width(1000), _height(1000) {}
-		Container2D(double width, double height) : _width(width), _height(height) {}
-
-		// add body
-		void AddBall(const Ball2D& body)
-		{
-			_balls.push_back(body);
-		}
-
-		// get body
-		Ball2D& Ball(int i)
-		{
-			return _balls[i];
-		}
-
-		// check if ball is out of bounds and handle it
-		void CheckAndHandleOutOfBounds(int ballIndex)
-		{
-			Ball2D& ball = _balls[ballIndex];
-
-			// left wall collision
-			if (ball.Pos().X() < ball.Rad() && ball.V().X() < 0)
-			{
-				ball.Pos().X() = ball.Rad() + (ball.Rad() - ball.Pos().X()); // Get back to box!
-				ball.V().X() *= -1;
-			}
-			// right wall collision
-			if (ball.Pos().X() > _width - ball.Rad() && ball.V().X() > 0)
-			{
-				ball.Pos().X() -= (ball.Pos().X() + ball.Rad()) - _width;
-				ball.V().X() *= -1;
-			}
-			// bottom wall collision
-			if (ball.Pos().Y() < ball.Rad() && ball.V().Y() < 0)
-			{
-				ball.Pos().Y() = ball.Rad() + (ball.Rad() - ball.Pos().Y());
-				ball.V().Y() *= -1;
-			}
-			// top wall collision
-			if (ball.Pos().Y() > _height - ball.Rad() && ball.V().Y() > 0)
-			{
-				ball.Pos().Y() -= (ball.Pos().Y() + ball.Rad()) - _height;
-				ball.V().Y() *= -1;
-			}
-		}
-	};
-
-	class CollisionSimulator2D
-	{
-		Container2D _box;
-
-	public:
-		CollisionSimulator2D() {}
-		CollisionSimulator2D(const Container2D& box) : _box(box) {}
-
-		double DistBalls(int i, int j)
-		{
-			return _box._balls[i].Pos().Dist(_box._balls[j].Pos());
-		}
-
-		bool HasBallsCollided(int i, int j)
-		{
-			// ako je udaljenost izmedju njihovih centara manja od zbroja radijusa
-			if (DistBalls(i, j) < _box._balls[i].Rad() + _box._balls[j].Rad())
-				return true;
-			else
-				return false;
-		}
-
-		void SimulateOneStep(double dt)
-		{
-			// check collisions at start configuration!!!
-			// that is also an end configuration for previous step
-			int NumBalls = _box._balls.size();
-
-			// first, update all ball's positions, and handle out of bounds
-			for (int i = 0; i < NumBalls; i++)
-			{
-				_box._balls[i].Pos() = _box._balls[i].Pos() + _box._balls[i].V() * dt;
-
-				_box.CheckAndHandleOutOfBounds(i);
-			}
-
-			// check for collisions, and handle it if there is one
-			for (int m = 0; m < NumBalls - 1; m++) {
-				for (int n = m + 1; n < NumBalls; n++)
-				{
-					if (HasBallsCollided(m, n))
-						HandleCollision(m, n, dt);
-				}
-			}
-		}
-
-		void HandleCollision(int m, int n, double dt)
-		{
-			Ball2D& ball1 = _box._balls[m];
-			Ball2D& ball2 = _box._balls[n];
-
-			// calculating point where they were before collision
-			// (if there was collision with the box wall, then calc.pos. will be outside the box
-			// but it doesn't matter, since we need only direction, ie. velocity, to calculate exact collision point)
-			Pnt2Cart x10 = ball1.Pos() - ball1.V() * dt;
-			Pnt2Cart x20 = ball2.Pos() - ball2.V() * dt;
-
-			Vec2Cart dx0(x10, x20);
-			Vec2Cart dv(ball2.V() - ball1.V());
-
-			// first, we have to calculate exact moment of collision, and balls positions then
-			double A = dv * dv;
-			double B = 2 * dx0 * dv;
-			double C = dx0 * dx0 - POW2(ball2.Rad() + ball1.Rad());
-
-			double t1 = (-B + sqrt(B * B - 4 * A * C)) / (2 * A);
-			double t2 = (-B - sqrt(B * B - 4 * A * C)) / (2 * A);
-
-			double tCollision = t1 < t2 ? t1 : t2;
-			//double tReverseBalls = tCollision - dt;    // with respect to CURRENT balls position
-
-			// calculating position of balls at the point of collision (moving them backwards)
-			Pnt2Cart x1 = ball1.Pos() + (tCollision - dt) * ball1.V();
-			Pnt2Cart x2 = ball2.Pos() + (tCollision - dt) * ball2.V();
-
-			// https://en.wikipedia.org/wiki/Elastic_collision - calculating new velocities after collision
-			double   m1 = ball1.Mass(), m2 = ball2.Mass();
-
-			Vec2Cart v1 = ball1.V(), v2 = ball2.V();
-
-			Vec2Cart v1_v2 = v1 - v2;
-			Vec2Cart x1_x2(x2, x1);
-
-			Vec2Cart v1_new = v1 - 2 * m2 / (m1 + m2) * (v1_v2 * x1_x2) / POW2(x1_x2.NormL2()) * Vec2Cart(x2, x1);
-			Vec2Cart v2_new = v2 - 2 * m1 / (m1 + m2) * (v1_v2 * x1_x2) / POW2(x1_x2.NormL2()) * Vec2Cart(x1, x2);
-
-			ball1.V() = v1_new;
-			ball2.V() = v2_new;
-
-			// adjusting new ball positions
-			ball1.Pos() = x1 + ball1.V() * (dt - tCollision);
-			ball2.Pos() = x2 + ball2.V() * (dt - tCollision);
-		}
-
-		std::vector<std::vector<Pnt2Cart>> Simulate(int numSteps, double timeStep)
-		{
-			int numBalls = _box._balls.size();
-
-			std::vector<std::vector<Pnt2Cart>> ballPositions(numBalls);
-
-			for (int i = 0; i < numSteps; i++)
-			{
-				double dt = timeStep; // time step
-
-				// save positions
-				for (int j = 0; j < numBalls; j++)
-					ballPositions[j].push_back(_box._balls[j].Pos());
-
-				// simulate one step
-				SimulateOneStep(dt);
-			}
-
-			return ballPositions;
-		}
-
-		void Serialize(std::string fileName, std::vector<std::vector<Pnt2Cart>> ballPositions)
-		{
-			std::ofstream file(fileName);
-			if (file.is_open())
-			{
-				file << "PARTICLE_SIMULATION_DATA_2D" << std::endl;
-				file << "NumBalls: " << _box._balls.size() << std::endl;
-
-				int count = 0;
-				for (const auto& ball : _box._balls)
-				{
-					file << "Ball_" << ++count << " " << ball.Color() << " " << ball.Rad() << std::endl;
-				}
-
-				file << "NumSteps: " << ballPositions[0].size() << std::endl;
-
-				for (int i = 0; i < ballPositions[0].size(); i++)
-				{
-					file << "Step " << i << " 0.1" << std::endl;
-					for (int j = 0; j < _box._balls.size(); j++)
-					{
-						const Ball2D& ball = _box._balls[j];
-						file << j << " " << ballPositions[j][i].X() << " " << ballPositions[j][i].Y() << "\n";
-					}
-				}
-				file.close();
-			}
-			else
-			{
-				std::cerr << "Unable to open file";
-			}
-		}
-	};
-}
-
-using namespace CollisionSimulator;
-
-double RandomUniform(double min, double max)
-{
-	return min + (max - min) * ((double)rand() / RAND_MAX);
-}
 
 void Example4_collision_calculator_2D()
 {
@@ -265,57 +751,16 @@ void Example4_collision_calculator_2D()
 	std::cout << "****                 EXAMPLE 4 - collision calculator              ****" << std::endl;
 	std::cout << "***********************************************************************" << std::endl;
 
-	// example 1
-	Container2D box1(1000, 800);
-
-	box1.AddBall(Ball2D(1.0, 10.0, "red", Pnt2Cart(100, 150), Vec2Cart(3, 1.5)));
-	box1.AddBall(Ball2D(2.0, 20.0, "blue", Pnt2Cart(200, 500), Vec2Cart(-2, -3)));
-	box1.AddBall(Ball2D(1.0, 10.0, "green", Pnt2Cart(300, 150), Vec2Cart(1, -2)));
-	box1.AddBall(Ball2D(3.0, 20.0, "yellow", Pnt2Cart(100, 400), Vec2Cart(-1, 1)));
-	box1.AddBall(Ball2D(1.0, 10.0, "purple", Pnt2Cart(200, 600), Vec2Cart(1, -0.6)));
-
-	// example 2 - 100 random balls
-	Container2D box2(1000, 800);
-	for (int i = 0; i < 50; i++)
-	{
-		double mass = RandomUniform(1.0, 10.0);
-		double radius = RandomUniform(2.0, 10.0);
-		std::string color = "Red";
-		Point2Cartesian position(RandomUniform(radius, box2._width - radius), RandomUniform(radius, box2._height - radius));
-		Vector2Cartesian velocity(RandomUniform(-5.0, 5.0), RandomUniform(-5.0, 5.0));
-
-		box2.AddBall(Ball2D(mass, radius, color, position, velocity));
-	}
-	for (int i = 0; i < 50; i++)
-	{
-		double mass = RandomUniform(1.0, 10.0);
-		double radius = RandomUniform(2.0, 10.0);
-		std::string color = "Blue";
-		Point2Cartesian position(RandomUniform(radius, box2._width - radius), RandomUniform(radius, box2._height - radius));
-		Vector2Cartesian velocity(RandomUniform(-5.0, 5.0), RandomUniform(-5.0, 5.0));
-
-		box2.AddBall(Ball2D(mass, radius, color, position, velocity));
-	}
-
-	// create simulator
-	CollisionSimulator2D simulator(box2);
-
-	// simulate
-	int numSteps = 1000;
-	auto ballPositions = simulator.Simulate(numSteps, 1.0);
-
-	simulator.Serialize(MML_PATH_ResultFiles + "SimData2.txt", ballPositions);
-
-	Visualizer::VisualizeParticleSimulation2D("SimData2.txt");
-
-	// print results
-
-	//for (int i = 0; i < numSteps; i++)
-	//{
-	//	std::cout << "Step " << i << ": " << std::endl;
-	//	for (int j = 0; j < box._balls.size(); j++)
-	//	{
-	//		std::cout << "Ball " << j << ": " << ballPositions[j][i].X() << ", " << ballPositions[j][i].Y() << std::endl;
-	//	}
-	//}
+	//Collision_Simulator_2D_N_random_balls();
+	//Collision_Simulator_2D_two_types_initially_separated();
+	//Collision_Simulator_2D_3();
+	//Collision_Simulator_2D_Brown_motion();
+	//Collision_Simulator_2D_Brown_motion_analysis();
+	//Collision_Simulator_2D_Test_fast();
+	Collision_Simulator_2D_Test_scaling_with_rows_cols();
+	//Collision_Simulator_2D_Pressure_on_walls();
+	//Collision_Simulator_2D_Comparing_pressure_for_diff_N();
+	//Collision_Simulator_2D_Comparing_pressure_for_diff_V();
+	//Collision_Simulator_2D_Comparing_pressure_for_diff_speed_of_balls();
+	//Collision_Simulator_2D_Test_statistics();
 }

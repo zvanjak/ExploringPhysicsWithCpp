@@ -6,14 +6,15 @@
 #include "interfaces/IODESystem.h"
 #include "interfaces/IODESystemStepCalculator.h"
 
-#include "core/ODESystem.h"
+#include "base/ODESystem.h"
 
 #include "algorithms/ODESystemStepCalculators.h"
 
 namespace MML
 {
 	// Base stepper class
-	class StepperBase {
+	class StepperBase 
+	{
 	protected:
 		// references that stepper gets from the solver
 		const IODESystem&		_sys;
@@ -44,6 +45,11 @@ namespace MML
 		Real& hNext()				{ return _hNext; }
 	};
 
+	//Implements fifth-order Runge-Kutta step with monitoring of local truncation error
+	//to ensure accuracy and	adjust stepsize.
+	//Inputs are the stepsize to be attempted htry and the required accuracy eps.
+	//On output, references to x and t are replaced by their new values, hdid is the stepsize that was
+	//actually accomplished, and hnext is the estimated next stepsize.
 	class RK5_CashKarp_Stepper : public StepperBase
 	{
 	private:
@@ -54,13 +60,6 @@ namespace MML
 		RK5_CashKarp_Stepper(const IODESystem& sys,	Real& t, Vector<Real>& x, Vector<Real>& dxdt)
 			: StepperBase(sys, t, x, dxdt) { }
 
-		/*
-		Implements fifth-order Runge-Kutta step with monitoring of local truncation error 
-		to ensure accuracy and	adjust stepsize. 
-		Inputs are the stepsize to be attempted htry and the required accuracy eps.
-		On output, references to x and t are replaced by their new values, hdid is the stepsize that was
-		actually accomplished, and hnext is the estimated next stepsize. 
-		*/
 		void doStep(Real htry, Real eps) override
 		{
 			const Real SAFETY = 0.9, PGROW = -0.2, PSHRNK = -0.25, ERRCON = 1.89e-4;
@@ -72,7 +71,7 @@ namespace MML
 			
 			// Scaling used to monitor accuracy. 
 			for (i = 0; i < n; i++)
-				xscale[i] = std::abs(_x[i]) + std::abs(_dxdt[i] * h) + 1e-30;
+				xscale[i] = std::abs(_x[i]) + std::abs(_dxdt[i] * h) + 1e-25;
 
 			for (;;) {
 				_stepCalc.calcStep(_sys, _t, _x, _dxdt, h, xtemp, xerr);

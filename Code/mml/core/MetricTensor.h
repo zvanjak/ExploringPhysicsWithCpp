@@ -18,7 +18,7 @@ namespace MML
 		MetricTensorField() : ITensorField2<N>(2, 0) { }
 		MetricTensorField(int numContra, int numCo) : ITensorField2<N>(numContra, numCo) { }
 
-		// implementing operator() requried by IFunction interface
+		// implementing operator() required by IFunction interface
 		Tensor2<N>   operator()(const VectorN<Real, N>& pos) const
 		{
 			Tensor2<N> ret(this->getNumContravar(), this->getNumCovar());
